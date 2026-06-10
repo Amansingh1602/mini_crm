@@ -1,18 +1,42 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customerApi } from "@/lib/api";
-import { useState } from "react";
-import { Search, MapPin, Calendar, CreditCard, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useRef } from "react";
+import { Search, MapPin, Calendar, CreditCard, ChevronLeft, ChevronRight, Upload } from "lucide-react";
 
 export default function CustomersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ["customers", page, search],
     queryFn: () => customerApi.list({ page, limit: 10, search: search || undefined }),
   });
+
+  const uploadMutation = useMutation({
+    mutationFn: (file: File) => customerApi.upload(file),
+    onSuccess: (res) => {
+      alert(`Upload complete! Processed ${res.data.processed} rows.`);
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+    },
+    onError: (err: any) => {
+      alert(`Upload failed: ${err.message}`);
+    }
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadMutation.mutate(file);
+    }
+    // Reset the input so the same file can be uploaded again if needed
+    if (e.target) {
+      e.target.value = '';
+    }
+  };
 
   return (
     <div className="fade-in">
@@ -22,19 +46,38 @@ export default function CustomersPage() {
           <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>Manage your customer database</p>
         </div>
 
-        <div style={{ position: "relative", width: "300px" }}>
-          <Search size={16} style={{ position: "absolute", left: "12px", top: "14px", color: "var(--text-muted)" }} />
-          <input
-            type="text"
-            placeholder="Search by name or email..."
-            className="input-base"
-            style={{ paddingLeft: "36px" }}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
+        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+          <div style={{ position: "relative", width: "300px" }}>
+            <Search size={16} style={{ position: "absolute", left: "12px", top: "14px", color: "var(--text-muted)" }} />
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              className="input-base"
+              style={{ paddingLeft: "36px" }}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
+          
+          <input 
+            type="file" 
+            accept=".csv" 
+            style={{ display: "none" }} 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
           />
+          <button 
+            className="btn-primary" 
+            style={{ display: "flex", alignItems: "center", gap: "8px" }}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadMutation.isPending}
+          >
+            <Upload size={16} />
+            {uploadMutation.isPending ? "Uploading..." : "Upload CSV"}
+          </button>
         </div>
       </div>
 

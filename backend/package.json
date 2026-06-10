@@ -2,15 +2,14 @@
   "name": "xeno-crm-backend",
   "version": "1.0.0",
   "description": "AI-Native Mini CRM Backend — Autonomous Campaign Planner",
-  "main": "dist/index.js",
+  "main": "src/index.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "node src/seed.js",
     "db:studio": "prisma studio"
   },
   "dependencies": {
@@ -31,14 +30,5 @@
     "socket.io": "^4.8.3",
     "uuid": "^11.1.0",
     "zod": "^3.24.2"
-  },
-  "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
-    "@types/multer": "^1.4.12",
-    "@types/node": "^22.10.0",
-    "@types/uuid": "^10.0.0",
-    "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
   }
 }
