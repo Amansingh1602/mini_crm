@@ -1,21 +1,11 @@
-import { Worker, Job } from 'bullmq';
-import { getRedis } from '../../lib/redis';
-import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
-import { QUEUE_NAMES, getDeadLetterQueue } from '../queue';
-import { CommunicationStatus, EventType } from '@prisma/client';
+import { CommunicationEvent } from '../../models/CommunicationEvent';
+import { Communication } from '../../models/Communication';
+import { CampaignAnalytics } from '../../models/CampaignAnalytics';
+import { Campaign } from '../../models/Campaign';
+import { getReceiptQueue, getDeadLetterQueue } from '../queue';
 
-interface ReceiptJobData {
-  communicationId: string;
-  campaignId: string;
-  type: string;
-  timestamp: string;
-  idempotencyKey: string;
-  metadata?: Record<string, unknown>;
-}
-
-// Maps event types to communication status fields
-const EVENT_TO_STATUS: Record<string, CommunicationStatus> = {
+const EVENT_TO_STATUS: Record<string, string> = {
   SENT: 'SENT',
   DELIVERED: 'DELIVERED',
   FAILED: 'FAILED',
@@ -44,138 +34,90 @@ const EVENT_TO_ANALYTICS_FIELD: Record<string, string> = {
   PURCHASED: 'purchased',
 };
 
-let receiptWorker: Worker | null = null;
+export function startReceiptWorker() {
+  const queue = getReceiptQueue();
 
-export function startReceiptWorker(): Worker {
-  if (receiptWorker) return receiptWorker;
+  queue.on('job', async (job: any) => {
+    const { communicationId, campaignId, type, timestamp, idempotencyKey, metadata } = job.data;
 
-  receiptWorker = new Worker(
-    QUEUE_NAMES.PROCESS_RECEIPT,
-    async (job: Job<ReceiptJobData>) => {
-      const { communicationId, campaignId, type, timestamp, idempotencyKey, metadata } = job.data;
+    logger.info({ jobId: job.id, communicationId, type, idempotencyKey }, 'Processing receipt');
 
-      logger.info({ jobId: job.id, communicationId, type, idempotencyKey }, 'Processing receipt');
-
-      // ─── Idempotency Check ───────────────────────────────
-      const existing = await prisma.communicationEvent.findUnique({
-        where: { idempotencyKey },
-      });
+    try {
+      const existing = await CommunicationEvent.findOne({ idempotencyKey });
 
       if (existing) {
         logger.info({ idempotencyKey }, 'Duplicate event, skipping');
-        return; // Idempotent — safe to skip
+        return;
       }
 
-      // ─── Create Event (Append-Only Log) ──────────────────
-      await prisma.communicationEvent.create({
-        data: {
-          communicationId,
-          type: type as EventType,
-          timestamp: new Date(timestamp),
-          idempotencyKey,
-          metadata: metadata ?? undefined,
-        },
+      await CommunicationEvent.create({
+        communicationId,
+        type: type,
+        timestamp: new Date(timestamp),
+        idempotencyKey,
+        metadata: metadata ? JSON.stringify(metadata) : null,
       });
 
-      // ─── Update Communication Status ─────────────────────
       const status = EVENT_TO_STATUS[type];
       const timestampField = EVENT_TO_TIMESTAMP_FIELD[type];
 
       if (status && timestampField) {
-        await prisma.communication.update({
-          where: { id: communicationId },
-          data: {
-            status,
-            [timestampField]: new Date(timestamp),
-          },
+        await Communication.findByIdAndUpdate(communicationId, {
+          status,
+          [timestampField]: new Date(timestamp),
         });
       }
 
-      // ─── Update Campaign Analytics ───────────────────────
       const analyticsField = EVENT_TO_ANALYTICS_FIELD[type];
       if (analyticsField) {
         const updateData: Record<string, any> = {
-          [analyticsField]: { increment: 1 },
+          $inc: { [analyticsField]: 1 },
         };
 
-        // If PURCHASED, also add revenue
         if (type === 'PURCHASED' && metadata && typeof metadata.orderAmount === 'number') {
-          updateData.revenue = { increment: metadata.orderAmount };
+          updateData.$inc.revenue = metadata.orderAmount;
         }
 
-        await prisma.campaignAnalytics.upsert({
-          where: { campaignId },
-          create: {
-            campaignId,
-            total: 0,
-            [analyticsField]: 1,
-            ...(type === 'PURCHASED' && metadata?.orderAmount
-              ? { revenue: metadata.orderAmount as number }
-              : {}),
-          },
-          update: updateData,
-        });
+        await CampaignAnalytics.findOneAndUpdate(
+          { campaignId },
+          updateData,
+          { upsert: true }
+        );
+
+        const { emitAnalyticsUpdate } = require('../../../lib/socket');
+        emitAnalyticsUpdate(campaignId);
       }
 
-      // ─── Check Campaign Completion ───────────────────────
-      // If all communications are in a terminal state, mark campaign as completed
-      const campaign = await prisma.campaign.findUnique({
-        where: { id: campaignId },
-        select: { status: true, _count: { select: { communications: true } } },
-      });
+      const campaign = await Campaign.findById(campaignId);
 
       if (campaign?.status === 'RUNNING') {
-        const pendingCount = await prisma.communication.count({
-          where: {
-            campaignId,
-            status: { in: ['PENDING', 'SENT'] },
-          },
+        const pendingCount = await Communication.countDocuments({
+          campaignId,
+          status: { $in: ['PENDING', 'SENT'] },
         });
 
         if (pendingCount === 0) {
-          await prisma.campaign.update({
-            where: { id: campaignId },
-            data: { status: 'COMPLETED', completedAt: new Date() },
-          });
+          campaign.status = 'COMPLETED';
+          campaign.completedAt = new Date();
+          await campaign.save();
           logger.info({ campaignId }, 'Campaign completed — all communications processed');
         }
       }
 
       logger.info({ communicationId, type }, 'Receipt processed successfully');
-    },
-    {
-      connection: getRedis(),
-      concurrency: 20,
-    }
-  );
-
-  receiptWorker.on('completed', (job) => {
-    logger.debug({ jobId: job.id }, 'Receipt job completed');
-  });
-
-  receiptWorker.on('failed', (job, err) => {
-    logger.error({ jobId: job?.id, err }, 'Receipt job failed');
-
-    // Move to DLQ after max retries
-    if (job && job.attemptsMade >= (job.opts.attempts || 5)) {
-      getDeadLetterQueue()
-        .add('failed-receipt', {
-          ...job.data,
-          error: err.message,
-          failedAt: new Date().toISOString(),
-        })
-        .catch((dlqErr) => logger.error({ dlqErr }, 'Failed to add to DLQ'));
+    } catch (err: any) {
+      logger.error({ jobId: job.id, err }, 'Receipt job failed');
+      getDeadLetterQueue().add('failed-receipt', {
+        ...job.data,
+        error: err.message,
+        failedAt: new Date().toISOString(),
+      }).catch(() => {});
     }
   });
 
-  return receiptWorker;
+  return queue;
 }
 
 export function stopReceiptWorker(): Promise<void> {
-  if (receiptWorker) {
-    const worker = receiptWorker;
-    receiptWorker = null;
-    return worker.close();
-  }
   return Promise.resolve();
 }

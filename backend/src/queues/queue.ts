@@ -1,74 +1,38 @@
-import { Queue } from 'bullmq';
-import { getRedis } from '../lib/redis';
+import { EventEmitter } from 'events';
 import { logger } from '../lib/logger';
-
-// ─── Queue Names ──────────────────────────────────────────
 
 export const QUEUE_NAMES = {
   SEND_COMMUNICATION: 'send-communication',
   PROCESS_RECEIPT: 'process-receipt',
-  DEAD_LETTER: 'dead-letter',
-} as const;
+};
 
-// ─── Queue Instances ──────────────────────────────────────
-
-let sendQueue: Queue | null = null;
-let receiptQueue: Queue | null = null;
-let deadLetterQueue: Queue | null = null;
-
-export function getSendQueue(): Queue {
-  if (!sendQueue) {
-    sendQueue = new Queue(QUEUE_NAMES.SEND_COMMUNICATION, {
-      connection: getRedis(),
-      defaultJobOptions: {
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 2000,
-        },
-        removeOnComplete: { count: 1000 },
-        removeOnFail: { count: 5000 },
-      },
-    });
-    logger.info('Send queue initialized');
+class MockQueue extends EventEmitter {
+  name: string;
+  constructor(name: string) {
+    super();
+    this.name = name;
   }
+  async add(jobName: string, data: any, opts: any = {}) {
+    logger.debug({ queue: this.name, jobName, data, opts }, 'Added job to mock queue');
+    // Run asynchronously
+    setTimeout(() => {
+      this.emit('job', { id: opts.jobId || Math.random().toString(), data, attemptsMade: 0, opts });
+    }, 100);
+  }
+}
+
+const sendQueue = new MockQueue(QUEUE_NAMES.SEND_COMMUNICATION);
+const receiptQueue = new MockQueue(QUEUE_NAMES.PROCESS_RECEIPT);
+const dlqQueue = new MockQueue('dead-letter-queue');
+
+export function getSendQueue() {
   return sendQueue;
 }
 
-export function getReceiptQueue(): Queue {
-  if (!receiptQueue) {
-    receiptQueue = new Queue(QUEUE_NAMES.PROCESS_RECEIPT, {
-      connection: getRedis(),
-      defaultJobOptions: {
-        attempts: 5,
-        backoff: {
-          type: 'exponential',
-          delay: 1000,
-        },
-        removeOnComplete: { count: 1000 },
-        removeOnFail: { count: 5000 },
-      },
-    });
-    logger.info('Receipt queue initialized');
-  }
+export function getReceiptQueue() {
   return receiptQueue;
 }
 
-export function getDeadLetterQueue(): Queue {
-  if (!deadLetterQueue) {
-    deadLetterQueue = new Queue(QUEUE_NAMES.DEAD_LETTER, {
-      connection: getRedis(),
-    });
-    logger.info('Dead letter queue initialized');
-  }
-  return deadLetterQueue;
-}
-
-export async function closeQueues(): Promise<void> {
-  await sendQueue?.close();
-  await receiptQueue?.close();
-  await deadLetterQueue?.close();
-  sendQueue = null;
-  receiptQueue = null;
-  deadLetterQueue = null;
+export function getDeadLetterQueue() {
+  return dlqQueue;
 }

@@ -1,11 +1,14 @@
 import { Router } from 'express';
-import { prisma } from '../lib/prisma';
+import { Customer } from '../models/Customer';
+import { Order } from '../models/Order';
+import { Campaign } from '../models/Campaign';
+import { CampaignAnalytics } from '../models/CampaignAnalytics';
+import { CampaignInsight } from '../models/CampaignInsight';
+import { Communication } from '../models/Communication';
+import { CommunicationEvent } from '../models/CommunicationEvent';
 import { asyncHandler, NotFoundError } from '../middleware/error';
 
 const router = Router();
-
-// ─── GET /api/analytics/dashboard ─────────────────────────
-// Overview metrics for the dashboard
 
 router.get(
   '/dashboard',
@@ -14,40 +17,44 @@ router.get(
       totalCustomers,
       totalOrders,
       totalCampaigns,
-      totalRevenue,
+      totalRevenueAgg,
       activeCampaigns,
       recentCampaigns,
-      channelStats,
+      channelStatsAgg,
+      allAnalyticsAgg
     ] = await Promise.all([
-      prisma.customer.count(),
-      prisma.order.count(),
-      prisma.campaign.count(),
-      prisma.order.aggregate({ _sum: { amount: true } }),
-      prisma.campaign.count({ where: { status: 'RUNNING' } }),
-      prisma.campaign.findMany({
-        take: 5,
-        orderBy: { createdAt: 'desc' },
-        include: { analytics: true, audience: { select: { name: true } } },
-      }),
-      prisma.campaign.groupBy({
-        by: ['channel'],
-        _count: true,
-      }),
+      Customer.countDocuments(),
+      Order.countDocuments(),
+      Campaign.countDocuments(),
+      Order.aggregate([{ $group: { _id: null, amount: { $sum: "$amount" } } }]),
+      Campaign.countDocuments({ status: 'RUNNING' }),
+      Campaign.find().sort({ createdAt: -1 }).limit(5).populate('audienceId', 'name'),
+      Campaign.aggregate([{ $group: { _id: "$channel", _count: { $sum: 1 } } }]),
+      CampaignAnalytics.aggregate([{
+        $group: {
+          _id: null,
+          sent: { $sum: "$sent" },
+          delivered: { $sum: "$delivered" },
+          failed: { $sum: "$failed" },
+          opened: { $sum: "$opened" },
+          read: { $sum: "$read" },
+          clicked: { $sum: "$clicked" },
+          purchased: { $sum: "$purchased" },
+          revenue: { $sum: "$revenue" }
+        }
+      }])
     ]);
 
-    // Aggregate analytics across all campaigns
-    const allAnalytics = await prisma.campaignAnalytics.aggregate({
-      _sum: {
-        sent: true,
-        delivered: true,
-        failed: true,
-        opened: true,
-        read: true,
-        clicked: true,
-        purchased: true,
-        revenue: true,
-      },
-    });
+    const formattedRecent = await Promise.all(recentCampaigns.map(async c => {
+      const obj = c.toObject() as any;
+      obj.audience = obj.audienceId;
+      delete obj.audienceId;
+      obj.analytics = await CampaignAnalytics.findOne({ campaignId: c._id });
+      return obj;
+    }));
+
+    const allAnalytics = allAnalyticsAgg[0] || {};
+    const channelStats = channelStatsAgg.map(c => ({ channel: c._id, _count: c._count }));
 
     res.json({
       success: true,
@@ -57,58 +64,56 @@ router.get(
           totalOrders,
           totalCampaigns,
           activeCampaigns,
-          totalRevenue: totalRevenue._sum.amount || 0,
-          campaignRevenue: allAnalytics._sum.revenue || 0,
+          totalRevenue: totalRevenueAgg[0]?.amount || 0,
+          campaignRevenue: allAnalytics.revenue || 0,
         },
         communicationMetrics: {
-          sent: allAnalytics._sum.sent || 0,
-          delivered: allAnalytics._sum.delivered || 0,
-          failed: allAnalytics._sum.failed || 0,
-          opened: allAnalytics._sum.opened || 0,
-          read: allAnalytics._sum.read || 0,
-          clicked: allAnalytics._sum.clicked || 0,
-          purchased: allAnalytics._sum.purchased || 0,
+          sent: allAnalytics.sent || 0,
+          delivered: allAnalytics.delivered || 0,
+          failed: allAnalytics.failed || 0,
+          opened: allAnalytics.opened || 0,
+          read: allAnalytics.read || 0,
+          clicked: allAnalytics.clicked || 0,
+          purchased: allAnalytics.purchased || 0,
         },
-        recentCampaigns,
+        recentCampaigns: formattedRecent,
         channelDistribution: channelStats,
       },
     });
   })
 );
 
-// ─── GET /api/analytics/campaigns/:id ─────────────────────
-// Detailed campaign analytics with funnel
-
 router.get(
   '/campaigns/:id',
   asyncHandler(async (req, res) => {
-    const campaign = await prisma.campaign.findUnique({
-      where: { id: req.params.id },
-      include: {
-        analytics: true,
-        audience: true,
-        insights: { orderBy: { createdAt: 'desc' } },
-      },
-    });
+    const campaign = await Campaign.findById(req.params.id).populate('audienceId');
 
     if (!campaign) throw new NotFoundError('Campaign', req.params.id);
 
-    // Communication status breakdown
-    const statusBreakdown = await prisma.communication.groupBy({
-      by: ['status'],
-      where: { campaignId: req.params.id },
-      _count: true,
-    });
+    const obj = campaign.toObject() as any;
+    obj.audience = obj.audienceId;
+    delete obj.audienceId;
 
-    // Event timeline
-    const eventTimeline = await prisma.communicationEvent.findMany({
-      where: { communication: { campaignId: req.params.id } },
-      orderBy: { timestamp: 'asc' },
-      select: { type: true, timestamp: true },
-    });
+    const [analytics, insights, statusBreakdownAgg, comms] = await Promise.all([
+      CampaignAnalytics.findOne({ campaignId: campaign._id }),
+      CampaignInsight.find({ campaignId: campaign._id }).sort({ createdAt: -1 }),
+      Communication.aggregate([
+        { $match: { campaignId: campaign._id } },
+        { $group: { _id: "$status", _count: { $sum: 1 } } }
+      ]),
+      Communication.find({ campaignId: campaign._id }).select('_id')
+    ]);
 
-    // Calculate rates
-    const a = campaign.analytics;
+    obj.analytics = analytics;
+    obj.insights = insights;
+
+    const statusBreakdown = statusBreakdownAgg.map(s => ({ status: s._id, _count: s._count }));
+
+    const eventTimeline = await CommunicationEvent.find({ communicationId: { $in: comms.map(c => c._id) } })
+      .sort({ timestamp: 1 })
+      .select('type timestamp');
+
+    const a = analytics;
     const total = a?.sent || 1;
     const rates = {
       deliveryRate: a ? (a.delivered / total * 100).toFixed(1) : '0',
@@ -119,7 +124,6 @@ router.get(
       conversionRate: a && a.clicked > 0 ? (a.purchased / a.clicked * 100).toFixed(1) : '0',
     };
 
-    // Funnel data
     const funnel = a
       ? [
           { stage: 'Sent', count: a.sent, percentage: 100 },
@@ -134,7 +138,7 @@ router.get(
     res.json({
       success: true,
       data: {
-        campaign,
+        campaign: obj,
         rates,
         funnel,
         statusBreakdown,
@@ -144,55 +148,47 @@ router.get(
   })
 );
 
-// ─── GET /api/analytics/channels ──────────────────────────
-// Channel comparison
-
 router.get(
   '/channels',
   asyncHandler(async (_req, res) => {
-    const channelStats = await prisma.campaign.groupBy({
-      by: ['channel'],
-      _count: true,
-    });
-
-    // Get aggregated analytics per channel
     const channels = ['WHATSAPP', 'SMS', 'EMAIL', 'RCS'];
     const channelAnalytics = await Promise.all(
       channels.map(async (channel) => {
-        const campaigns = await prisma.campaign.findMany({
-          where: { channel: channel as any },
-          select: { id: true },
-        });
-
-        const campaignIds = campaigns.map((c) => c.id);
+        const campaigns = await Campaign.find({ channel }).select('_id');
+        const campaignIds = campaigns.map((c) => c._id);
 
         if (campaignIds.length === 0) {
           return { channel, campaigns: 0, sent: 0, delivered: 0, opened: 0, clicked: 0, purchased: 0, revenue: 0 };
         }
 
-        const analytics = await prisma.campaignAnalytics.aggregate({
-          where: { campaignId: { in: campaignIds } },
-          _sum: {
-            sent: true,
-            delivered: true,
-            failed: true,
-            opened: true,
-            read: true,
-            clicked: true,
-            purchased: true,
-            revenue: true,
-          },
-        });
+        const analyticsAgg = await CampaignAnalytics.aggregate([
+          { $match: { campaignId: { $in: campaignIds } } },
+          {
+            $group: {
+              _id: null,
+              sent: { $sum: "$sent" },
+              delivered: { $sum: "$delivered" },
+              failed: { $sum: "$failed" },
+              opened: { $sum: "$opened" },
+              read: { $sum: "$read" },
+              clicked: { $sum: "$clicked" },
+              purchased: { $sum: "$purchased" },
+              revenue: { $sum: "$revenue" }
+            }
+          }
+        ]);
+
+        const analytics = analyticsAgg[0] || {};
 
         return {
           channel,
           campaigns: campaignIds.length,
-          sent: analytics._sum.sent || 0,
-          delivered: analytics._sum.delivered || 0,
-          opened: analytics._sum.opened || 0,
-          clicked: analytics._sum.clicked || 0,
-          purchased: analytics._sum.purchased || 0,
-          revenue: analytics._sum.revenue || 0,
+          sent: analytics.sent || 0,
+          delivered: analytics.delivered || 0,
+          opened: analytics.opened || 0,
+          clicked: analytics.clicked || 0,
+          purchased: analytics.purchased || 0,
+          revenue: analytics.revenue || 0,
         };
       })
     );

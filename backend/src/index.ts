@@ -1,15 +1,16 @@
+import { createServer } from 'http';
 import app from './app';
 import { env, validateEnv } from './config/env';
 import { logger } from './lib/logger';
-import { prisma } from './lib/prisma';
-import { closeRedis } from './lib/redis';
+import { connectDB, disconnectDB } from './lib/mongoose';
 import { startWorkers, stopWorkers } from './queues/workers';
+import { initSocket } from './lib/socket';
 
 async function main() {
   validateEnv();
 
   // Connect to database
-  await prisma.$connect();
+  await connectDB();
   logger.info('Database connected');
 
   // Start BullMQ workers
@@ -17,11 +18,15 @@ async function main() {
     await startWorkers();
     logger.info('Queue workers started');
   } catch (err) {
-    logger.warn({ err }, 'Queue workers failed to start (Redis may not be available)');
+    logger.warn({ err }, 'Queue workers failed to start');
   }
 
+  // Create HTTP server and initialize socket
+  const server = createServer(app);
+  initSocket(server);
+
   // Start server
-  const server = app.listen(env.PORT, () => {
+  server.listen(env.PORT, () => {
     logger.info({ port: env.PORT, env: env.NODE_ENV }, '🚀 Xeno CRM API running');
   });
 
@@ -31,8 +36,7 @@ async function main() {
     
     server.close(async () => {
       await stopWorkers();
-      await closeRedis();
-      await prisma.$disconnect();
+      await disconnectDB();
       logger.info('All connections closed');
       process.exit(0);
     });

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma } from '../lib/prisma';
+import { Order } from '../models/Order';
 import { asyncHandler, validate } from '../middleware/error';
 
 const router = Router();
@@ -14,8 +14,6 @@ const orderQuerySchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
-// ─── GET /api/orders ──────────────────────────────────────
-
 router.get(
   '/',
   validate(orderQuerySchema, 'query'),
@@ -25,49 +23,52 @@ router.get(
 
     const where: any = {};
     if (customerId) where.customerId = customerId;
-    if (category) where.category = { equals: category, mode: 'insensitive' };
+    if (category) where.category = { $regex: new RegExp(`^${category}$`, 'i') };
+
+    const sortConfig: any = { [sortBy]: sortOrder === 'desc' ? -1 : 1 };
 
     const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { [sortBy]: sortOrder },
-        include: { customer: { select: { name: true, email: true } } },
-      }),
-      prisma.order.count({ where }),
+      Order.find(where)
+        .sort(sortConfig)
+        .skip(skip)
+        .limit(limit)
+        .populate('customerId', 'name email'),
+      Order.countDocuments(where),
     ]);
+
+    const formattedOrders = orders.map(order => {
+      const obj = order.toObject() as any;
+      obj.customer = obj.customerId;
+      delete obj.customerId;
+      return obj;
+    });
 
     res.json({
       success: true,
-      data: orders,
+      data: formattedOrders,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   })
 );
 
-// ─── GET /api/orders/stats ────────────────────────────────
-
 router.get(
   '/stats',
   asyncHandler(async (_req, res) => {
-    const [totalOrders, totalRevenue, categoryStats] = await Promise.all([
-      prisma.order.count(),
-      prisma.order.aggregate({ _sum: { amount: true } }),
-      prisma.order.groupBy({
-        by: ['category'],
-        _count: true,
-        _sum: { amount: true },
-        _avg: { amount: true },
-        orderBy: { _sum: { amount: 'desc' } },
-      }),
+    const [totalOrders, amountAgg, categoryStats] = await Promise.all([
+      Order.countDocuments(),
+      Order.aggregate([{ $group: { _id: null, totalAmount: { $sum: "$amount" } } }]),
+      Order.aggregate([
+        { $group: { _id: "$category", count: { $sum: 1 }, sumAmount: { $sum: "$amount" }, avgAmount: { $avg: "$amount" } } },
+        { $sort: { sumAmount: -1 } },
+        { $project: { category: "$_id", _count: "$count", _sum: { amount: "$sumAmount" }, _avg: { amount: "$avgAmount" }, _id: 0 } }
+      ])
     ]);
 
     res.json({
       success: true,
       data: {
         totalOrders,
-        totalRevenue: totalRevenue._sum.amount || 0,
+        totalRevenue: amountAgg.length > 0 ? amountAgg[0].totalAmount : 0,
         categories: categoryStats,
       },
     });

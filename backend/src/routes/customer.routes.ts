@@ -3,14 +3,13 @@ import multer from 'multer';
 import { parse } from 'csv-parse';
 import { Readable } from 'stream';
 import { z } from 'zod';
-import { prisma } from '../lib/prisma';
+import { Customer } from '../models/Customer';
+import { Order } from '../models/Order';
 import { asyncHandler, validate, NotFoundError } from '../middleware/error';
 import { logger } from '../lib/logger';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
-
-// ─── Schemas ──────────────────────────────────────────────
 
 const customerQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -21,8 +20,6 @@ const customerQuerySchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
-// ─── GET /api/customers ───────────────────────────────────
-
 router.get(
   '/',
   validate(customerQuerySchema, 'query'),
@@ -32,23 +29,41 @@ router.get(
 
     const where: any = {};
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
+      where.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
       ];
     }
-    if (city) where.city = { equals: city, mode: 'insensitive' };
+    if (city) where.city = { $regex: new RegExp(`^${city}$`, 'i') };
 
-    const [customers, total] = await Promise.all([
-      prisma.customer.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { [sortBy]: sortOrder },
-        include: { _count: { select: { orders: true } } },
-      }),
-      prisma.customer.count({ where }),
+    const sortConfig: any = { [sortBy]: sortOrder === 'desc' ? -1 : 1 };
+
+    const customers = await Customer.aggregate([
+      { $match: where },
+      { $sort: sortConfig },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'orders',
+          localField: '_id',
+          foreignField: 'customerId',
+          as: 'orders'
+        }
+      },
+      {
+        $addFields: {
+          _count: { orders: { $size: '$orders' } }
+        }
+      },
+      {
+        $project: {
+          orders: 0
+        }
+      }
     ]);
+
+    const total = await Customer.countDocuments(where);
 
     res.json({
       success: true,
@@ -63,31 +78,27 @@ router.get(
   })
 );
 
-// ─── GET /api/customers/:id ───────────────────────────────
-
 router.get(
   '/:id',
   asyncHandler(async (req, res) => {
-    const customer = await prisma.customer.findUnique({
-      where: { id: req.params.id },
-      include: {
-        orders: { orderBy: { createdAt: 'desc' }, take: 20 },
-        communications: {
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-          include: { campaign: { select: { title: true } } },
-        },
-        _count: { select: { orders: true, communications: true } },
-      },
-    });
+    const customer = await Customer.findById(req.params.id)
+      .populate({ path: 'orders', options: { sort: { createdAt: -1 }, limit: 20 } })
+      .populate({ 
+        path: 'communications', 
+        options: { sort: { createdAt: -1 }, limit: 10 },
+        populate: { path: 'campaignId', select: 'title' }
+      });
 
     if (!customer) throw new NotFoundError('Customer', req.params.id);
 
-    res.json({ success: true, data: customer });
+    const orderCount = await Order.countDocuments({ customerId: customer._id });
+
+    const data = customer.toObject();
+    data._count = { orders: orderCount, communications: data.communications?.length || 0 };
+
+    res.json({ success: true, data });
   })
 );
-
-// ─── POST /api/customers/upload ───────────────────────────
 
 router.post(
   '/upload',
@@ -135,24 +146,21 @@ router.post(
       }
     }
 
-    // Upsert in batches
     let created = 0;
     let updated = 0;
 
     for (const record of records) {
       try {
-        await prisma.customer.upsert({
-          where: { email: record.email },
-          create: record,
-          update: record,
-        });
-        created++;
-      } catch (err: any) {
-        if (err.code === 'P2002') {
+        const existing = await Customer.findOne({ email: record.email });
+        if (existing) {
+          await Customer.updateOne({ email: record.email }, record);
           updated++;
         } else {
-          errors.push(`Failed to insert ${record.email}: ${err.message}`);
+          await Customer.create(record);
+          created++;
         }
+      } catch (err: any) {
+        errors.push(`Failed to insert ${record.email}: ${err.message}`);
       }
     }
 
@@ -165,13 +173,11 @@ router.post(
         created,
         updated,
         errors: errors.length,
-        errorDetails: errors.slice(0, 10), // Return first 10 errors
+        errorDetails: errors.slice(0, 10),
       },
     });
   })
 );
-
-// ─── POST /api/customers/seed ─────────────────────────────
 
 router.post(
   '/seed',
@@ -205,21 +211,22 @@ router.post(
       });
     }
 
-    // Batch create
-    const result = await prisma.customer.createMany({
-      data: customers,
-      skipDuplicates: true,
-    });
+    let createdCount = 0;
+    try {
+      const result = await Customer.insertMany(customers, { ordered: false });
+      createdCount = result.length;
+    } catch (err: any) {
+      if (err.insertedDocs) createdCount = err.insertedDocs.length;
+    }
 
-    // Generate orders for each customer
-    const allCustomers = await prisma.customer.findMany({ select: { id: true } });
+    const allCustomers = await Customer.find().select('_id');
     const orders = [];
 
     for (const customer of allCustomers) {
       const orderCount = Math.floor(Math.random() * 8) + 1;
       for (let j = 0; j < orderCount; j++) {
         orders.push({
-          customerId: customer.id,
+          customerId: customer._id,
           amount: Math.round((Math.random() * 10000 + 200) * 100) / 100,
           category: categories[Math.floor(Math.random() * categories.length)],
           createdAt: new Date(Date.now() - Math.floor(Math.random() * 365) * 24 * 60 * 60 * 1000),
@@ -227,14 +234,14 @@ router.post(
       }
     }
 
-    await prisma.order.createMany({ data: orders });
+    await Order.insertMany(orders);
 
-    logger.info({ customers: result.count, orders: orders.length }, 'Seed data generated');
+    logger.info({ customers: createdCount, orders: orders.length }, 'Seed data generated');
 
     res.json({
       success: true,
       data: {
-        customersCreated: result.count,
+        customersCreated: createdCount,
         ordersCreated: orders.length,
       },
     });

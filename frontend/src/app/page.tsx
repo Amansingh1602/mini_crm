@@ -1,7 +1,9 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { analyticsApi, customerApi } from "@/lib/api";
+import { io } from "socket.io-client";
 import {
   Users,
   ShoppingCart,
@@ -19,6 +21,29 @@ import {
 import Link from "next/link";
 
 export default function DashboardPage() {
+  const queryClient = useQueryClient();
+
+  // Setup real-time analytics stream via WebSocket
+  useEffect(() => {
+    // The backend runs on port 3001
+    const socket = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001");
+
+    socket.on("connect", () => {
+      console.log("Connected to real-time analytics stream");
+    });
+
+    socket.on("campaignAnalyticsUpdated", (data) => {
+      console.log("Received live analytics update:", data);
+      // Invalidate the dashboard query to trigger a background refetch
+      // This will make the numbers tick up live!
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [queryClient]);
+
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: analyticsApi.dashboard,
