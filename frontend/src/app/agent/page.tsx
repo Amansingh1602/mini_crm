@@ -1,21 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { campaignApi, audienceApi } from "@/lib/api";
+import { campaignApi } from "@/lib/api";
 import {
   Sparkles,
   Send,
-  Users,
-  Megaphone,
-  MessageSquare,
-  Target,
-  TrendingUp,
-  CheckCircle2,
-  Rocket,
   ArrowRight,
   Loader2,
   ThumbsUp,
   Zap,
+  Rocket,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -78,7 +72,7 @@ export default function AgentPage() {
       });
 
       const result = await campaignApi.autonomous(goal);
-      const { campaign, audience, aiReasoning } = result.data;
+      const { campaign, audience } = result.data;
 
       setCampaignResult(result.data);
 
@@ -116,7 +110,7 @@ export default function AgentPage() {
     } catch (error: any) {
       addMessage({
         type: "system",
-        content: `❌ Error: ${error.message || "Failed to generate campaign. Please check your API key and try again."}`,
+        content: `❌ Error: ${error.message || "Failed to generate campaign. Please check your database connection and try again."}`,
       });
       setCurrentStep(null);
     } finally {
@@ -162,37 +156,134 @@ export default function AgentPage() {
   };
 
   return (
-    <div className="fade-in" style={{ height: "calc(100vh - 48px)", display: "flex", flexDirection: "column" }}>
+    <div className="fade-in" style={{ height: "calc(100vh - 80px)", display: "flex", flexDirection: "column" }}>
       {/* Header */}
-      <div style={{ marginBottom: "20px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+      <div style={{ marginBottom: "24px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
           <div
             style={{
-              width: "40px",
-              height: "40px",
+              width: "44px",
+              height: "44px",
               borderRadius: "12px",
               background: "linear-gradient(135deg, #6366f1, #7c3aed)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              boxShadow: "0 0 20px rgba(99, 102, 241, 0.3)",
             }}
           >
             <Sparkles size={20} color="white" />
           </div>
           <div>
-            <h1 style={{ fontSize: "22px", fontWeight: 700 }} className="gradient-text">
+            <h1 style={{ fontSize: "24px", fontWeight: 800, letterSpacing: "-0.02em" }} className="gradient-text">
               Autonomous Campaign Agent
             </h1>
-            <p style={{ color: "var(--text-muted)", fontSize: "13px" }}>
-              Describe a goal → AI builds the entire campaign
+            <p style={{ color: "var(--text-secondary)", fontSize: "13px", marginTop: "2px" }}>
+              Describe a business goal → AI handles targeting, copywriting, and deployment
             </p>
           </div>
         </div>
       </div>
 
-      {/* Example Prompts */}
+      {/* Messages viewport */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
+          paddingBottom: "24px",
+          paddingRight: "4px",
+        }}
+      >
+        {messages.map((msg) => {
+          const isUser = msg.type === "user";
+          const isSystem = msg.type === "system";
+
+          return (
+            <div
+              key={msg.id}
+              className="slide-up"
+              style={{
+                display: "flex",
+                justifyContent: isUser ? "flex-end" : "flex-start",
+              }}
+            >
+              <div
+                style={{
+                  maxWidth: isUser ? "65%" : "85%",
+                  padding: isSystem ? "12px 18px" : "18px 22px",
+                  borderRadius: isUser ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                  background: isUser
+                    ? "linear-gradient(135deg, #6366f1, #4f46e5)"
+                    : isSystem
+                    ? "rgba(6, 182, 212, 0.05)"
+                    : "rgba(13, 13, 22, 0.45)",
+                  border: isUser
+                    ? "none"
+                    : isSystem
+                    ? "1px solid rgba(6, 182, 212, 0.15)"
+                    : "1px solid rgba(255, 255, 255, 0.05)",
+                  borderLeft: msg.type === "ai" ? "3px solid var(--accent)" : undefined,
+                  boxShadow: isSystem ? "none" : "0 4px 20px rgba(0, 0, 0, 0.3)",
+                  color: isSystem
+                    ? "#22d3ee"
+                    : isUser
+                    ? "#ffffff"
+                    : "var(--text-primary)",
+                  fontSize: "14px",
+                  lineHeight: "1.6",
+                  whiteSpace: "pre-wrap",
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: formatMarkdown(msg.content),
+                }}
+              />
+            </div>
+          );
+        })}
+
+        {/* Typing indicator */}
+        {isProcessing && currentStep && (
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 8px" }} className="slide-up">
+            <div style={{ display: "flex", gap: "4px" }}>
+              <div className="typing-dot" style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--accent)" }} />
+              <div className="typing-dot" style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--accent)" }} />
+              <div className="typing-dot" style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--accent)" }} />
+            </div>
+            <span style={{ fontSize: "13px", color: "var(--text-muted)", fontWeight: 500 }}>{currentStep}</span>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        {campaignResult && !isProcessing && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", padding: "12px 4px" }} className="slide-up">
+            <button onClick={handleApprove} className="btn-primary" style={{ background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 4px 14px rgba(16, 185, 129, 0.2)" }}>
+              <ThumbsUp size={16} />
+              Approve Campaign
+            </button>
+            <button onClick={handleLaunch} className="btn-primary">
+              <Rocket size={16} />
+              Launch Campaign
+            </button>
+            <Link
+              href={`/campaigns/${campaignResult.campaign.id}`}
+              className="btn-secondary"
+              style={{ textDecoration: "none" }}
+            >
+              <span>View Details</span>
+              <ArrowRight size={14} style={{ color: "var(--text-secondary)" }} />
+            </Link>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Suggested prompts (only show when no message sent) */}
       {messages.length <= 1 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "10px", marginBottom: "20px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "12px", marginBottom: "16px" }}>
           {[
             "Bring back customers who haven't purchased in 60 days",
             "Increase repeat purchases from high-value customers",
@@ -204,104 +295,28 @@ export default function AgentPage() {
               onClick={() => setInput(prompt)}
               className="glass-card"
               style={{
-                padding: "14px 16px",
+                padding: "16px",
                 textAlign: "left",
                 fontSize: "13px",
                 color: "var(--text-secondary)",
                 cursor: "pointer",
                 border: "1px solid var(--border)",
-                background: "var(--bg-card)",
+                background: "rgba(13, 13, 22, 0.4)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+                transition: "all 0.3s ease",
               }}
             >
-              <Zap size={14} style={{ color: "var(--accent)", marginBottom: "6px" }} />
-              <div>{prompt}</div>
+              <Zap size={14} style={{ color: "var(--accent)" }} />
+              <div style={{ fontWeight: 500, lineHeight: 1.4 }}>{prompt}</div>
             </button>
           ))}
         </div>
       )}
 
-      {/* Messages */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          paddingBottom: "16px",
-        }}
-      >
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className="slide-up"
-            style={{
-              display: "flex",
-              justifyContent: msg.type === "user" ? "flex-end" : "flex-start",
-            }}
-          >
-            <div
-              style={{
-                maxWidth: msg.type === "user" ? "60%" : "85%",
-                padding: "14px 18px",
-                borderRadius: msg.type === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                background:
-                  msg.type === "user"
-                    ? "linear-gradient(135deg, #6366f1, #7c3aed)"
-                    : msg.type === "system"
-                    ? "rgba(59, 130, 246, 0.1)"
-                    : "var(--bg-card)",
-                border: msg.type === "ai" ? "1px solid var(--border)" : "none",
-                color: msg.type === "user" ? "white" : "var(--text-primary)",
-                fontSize: "14px",
-                lineHeight: "1.6",
-                whiteSpace: "pre-wrap",
-              }}
-              dangerouslySetInnerHTML={{
-                __html: formatMarkdown(msg.content),
-              }}
-            />
-          </div>
-        ))}
-
-        {/* Typing indicator */}
-        {isProcessing && currentStep && (
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 0" }}>
-            <div style={{ display: "flex", gap: "4px" }}>
-              <div className="typing-dot" style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--accent)" }} />
-              <div className="typing-dot" style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--accent)" }} />
-              <div className="typing-dot" style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--accent)" }} />
-            </div>
-            <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>{currentStep}</span>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        {campaignResult && !isProcessing && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", padding: "8px 0" }}>
-            <button onClick={handleApprove} className="btn-primary" style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}>
-              <ThumbsUp size={16} />
-              Approve Campaign
-            </button>
-            <button onClick={handleLaunch} className="btn-primary">
-              <Rocket size={16} />
-              Launch Campaign
-            </button>
-            <Link
-              href={`/campaigns/${campaignResult.campaign.id}`}
-              className="btn-secondary"
-              style={{ display: "inline-flex", alignItems: "center", gap: "8px", textDecoration: "none" }}
-            >
-              View Details <ArrowRight size={14} />
-            </Link>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input */}
-      <form onSubmit={handleSubmit} style={{ display: "flex", gap: "12px", paddingTop: "16px", borderTop: "1px solid var(--border)" }}>
+      {/* Input Form */}
+      <form onSubmit={handleSubmit} style={{ display: "flex", gap: "12px", paddingTop: "20px", borderTop: "1px solid var(--border)", background: "transparent" }}>
         <input
           type="text"
           value={input}
@@ -315,7 +330,7 @@ export default function AgentPage() {
           type="submit"
           disabled={!input.trim() || isProcessing}
           className="btn-primary"
-          style={{ padding: "12px 20px" }}
+          style={{ padding: "0 22px", height: "50px" }}
         >
           {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
         </button>
@@ -326,16 +341,16 @@ export default function AgentPage() {
 
 function formatMarkdown(text: string): string {
   return text
-    .replace(/### (.*)/g, '<h3 style="font-size:16px;font-weight:700;margin:8px 0">$1</h3>')
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/### (.*)/g, '<h3 style="font-size:16px;font-weight:700;margin:12px 0 6px 0;color:#f8fafc">$1</h3>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong style="color:#ffffff;font-weight:600">$1</strong>')
     .replace(/\n\n/g, "<br/><br/>")
     .replace(/\n/g, "<br/>")
-    .replace(/> (.*)/g, '<blockquote style="border-left:3px solid var(--accent);padding:8px 12px;margin:8px 0;background:var(--bg-hover);border-radius:0 8px 8px 0;font-style:italic">$1</blockquote>')
+    .replace(/> (.*)/g, '<blockquote style="border-left:3px solid var(--accent);padding:10px 16px;margin:12px 0;background:rgba(255,255,255,0.02);border-radius:0 8px 8px 0;font-style:italic;color:var(--text-secondary)">$1</blockquote>')
     .replace(/\|(.*)\|/g, (match) => {
       if (match.includes("---")) return "";
       const cells = match.split("|").filter(Boolean);
-      return `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px">${cells
-        .map((c) => `<span>${c.trim()}</span>`)
+      return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.02);font-size:13px">${cells
+        .map((c, i) => `<span style="font-weight:${i === 0 ? "500" : "700"};color:${i === 0 ? "var(--text-secondary)" : "var(--accent)"}">${c.trim()}</span>`)
         .join("")}</div>`;
     });
 }

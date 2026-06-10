@@ -15,17 +15,19 @@ export class AudienceController {
   }
 
   static async getById(req: Request, res: Response) {
-    const data = await AudienceService.getAudienceById(req.params.id);
+    const id = req.params.id as string;
+    const data = await AudienceService.getAudienceById(id);
     if (!data) {
-      throw new NotFoundError('Audience', req.params.id);
+      throw new NotFoundError('Audience', id);
     }
     res.json({ success: true, data });
   }
 
   static async delete(req: Request, res: Response) {
-    const deleted = await AudienceService.deleteAudience(req.params.id);
+    const id = req.params.id as string;
+    const deleted = await AudienceService.deleteAudience(id);
     if (!deleted) {
-      throw new NotFoundError('Audience', req.params.id);
+      throw new NotFoundError('Audience', id);
     }
     res.json({ success: true, message: 'Audience deleted' });
   }

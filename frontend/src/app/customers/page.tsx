@@ -32,28 +32,33 @@ export default function CustomersPage() {
     if (file) {
       uploadMutation.mutate(file);
     }
-    // Reset the input so the same file can be uploaded again if needed
     if (e.target) {
       e.target.value = '';
     }
   };
 
   return (
-    <div className="fade-in">
-      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "16px", marginBottom: "24px" }}>
+    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+      {/* Header Section */}
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "16px" }}>
         <div>
-          <h1 style={{ fontSize: "28px", fontWeight: 700 }} className="gradient-text">Customers</h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>Manage your customer database</p>
+          <h1 style={{ fontSize: "32px", fontWeight: 800, letterSpacing: "-0.03em" }} className="gradient-text">
+            Customers
+          </h1>
+          <p style={{ color: "var(--text-secondary)", fontSize: "14px", marginTop: "4px" }}>
+            Manage and view your customer segmentation database
+          </p>
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px" }}>
-          <div style={{ position: "relative", width: "100%", maxWidth: "300px" }}>
-            <Search size={16} style={{ position: "absolute", left: "12px", top: "14px", color: "var(--text-muted)" }} />
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px" }}>
+          {/* Search Input */}
+          <div style={{ position: "relative", width: "100%", minWidth: "240px" }}>
+            <Search size={16} style={{ position: "absolute", left: "14px", top: "15px", color: "var(--text-muted)" }} />
             <input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder="Search customers..."
               className="input-base"
-              style={{ paddingLeft: "36px" }}
+              style={{ paddingLeft: "40px" }}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -62,6 +67,7 @@ export default function CustomersPage() {
             />
           </div>
           
+          {/* CSV Upload */}
           <input 
             type="file" 
             accept=".csv" 
@@ -71,9 +77,9 @@ export default function CustomersPage() {
           />
           <button 
             className="btn-primary" 
-            style={{ display: "flex", alignItems: "center", gap: "8px" }}
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadMutation.isPending}
+            style={{ height: "48px" }}
           >
             <Upload size={16} />
             {uploadMutation.isPending ? "Uploading..." : "Upload CSV"}
@@ -81,53 +87,54 @@ export default function CustomersPage() {
         </div>
       </div>
 
+      {/* Table Section */}
       <div className="glass-card" style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", minWidth: "600px" }}>
+        <table style={{ minWidth: "700px" }}>
           <thead>
-            <tr style={{ borderBottom: "1px solid var(--border)", background: "rgba(0,0,0,0.2)" }}>
-              <th style={{ padding: "16px 20px", fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Name</th>
-              <th style={{ padding: "16px 20px", fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Location</th>
-              <th style={{ padding: "16px 20px", fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Total Spent</th>
-              <th style={{ padding: "16px 20px", fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Last Purchase</th>
+            <tr>
+              <th>Name & Contact</th>
+              <th>Location</th>
+              <th>Total Revenue</th>
+              <th>Last Interaction</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               Array(5).fill(0).map((_, i) => (
-                <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
-                  <td colSpan={4} style={{ padding: "16px 20px" }}>
-                    <div className="skeleton" style={{ height: "24px", width: "100%" }}></div>
+                <tr key={i}>
+                  <td colSpan={4}>
+                    <div className="skeleton" style={{ height: "30px", width: "100%" }}></div>
                   </td>
                 </tr>
               ))
             ) : data?.data.length === 0 ? (
               <tr>
-                <td colSpan={4} style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
-                  No customers found
+                <td colSpan={4} style={{ padding: "64px", textAlign: "center", color: "var(--text-muted)" }}>
+                  No customer records found matching search criteria.
                 </td>
               </tr>
             ) : (
               data?.data.map((customer: any) => (
-                <tr key={customer.id} style={{ borderBottom: "1px solid var(--border)", transition: "background 0.2s" }} className="hover:bg-white/5">
-                  <td style={{ padding: "16px 20px" }}>
-                    <div style={{ fontWeight: 500, color: "var(--text-primary)" }}>{customer.name}</div>
-                    <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>{customer.email}</div>
+                <tr key={customer.id}>
+                  <td>
+                    <div style={{ fontWeight: 600, color: "#f8fafc", fontSize: "15px" }}>{customer.name}</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>{customer.email}</div>
                   </td>
-                  <td style={{ padding: "16px 20px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "14px" }}>
-                      <MapPin size={14} style={{ color: "var(--text-muted)" }} />
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "var(--text-secondary)" }}>
+                      <MapPin size={13} style={{ color: "var(--text-muted)" }} />
                       {customer.city || "Unknown"}
                     </div>
                   </td>
-                  <td style={{ padding: "16px 20px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "14px", fontWeight: 500 }}>
-                      <CreditCard size={14} style={{ color: "var(--accent)" }} />
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "14px", fontWeight: 700, color: "#f8fafc" }}>
+                      <CreditCard size={13} style={{ color: "var(--accent)" }} />
                       ₹{customer.totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </div>
                   </td>
-                  <td style={{ padding: "16px 20px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "14px", color: "var(--text-secondary)" }}>
-                      <Calendar size={14} />
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "var(--text-secondary)" }}>
+                      <Calendar size={13} style={{ color: "var(--text-muted)" }} />
                       {customer.lastPurchaseDate ? new Date(customer.lastPurchaseDate).toLocaleDateString() : "Never"}
                     </div>
                   </td>
@@ -137,16 +144,16 @@ export default function CustomersPage() {
           </tbody>
         </table>
 
-        {/* Pagination */}
+        {/* Pagination Controls */}
         {data?.pagination && (
-          <div style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border)" }}>
+          <div style={{ padding: "18px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border)", background: "rgba(9, 9, 15, 0.2)" }}>
             <div style={{ fontSize: "13px", color: "var(--text-muted)" }}>
-              Showing {((data.pagination.page - 1) * data.pagination.limit) + 1} to {Math.min(data.pagination.page * data.pagination.limit, data.pagination.total)} of {data.pagination.total} entries
+              Showing <span style={{ color: "var(--text-secondary)" }}>{((data.pagination.page - 1) * data.pagination.limit) + 1}</span> to <span style={{ color: "var(--text-secondary)" }}>{Math.min(data.pagination.page * data.pagination.limit, data.pagination.total)}</span> of <span style={{ color: "var(--text-secondary)" }}>{data.pagination.total}</span> customers
             </div>
             <div style={{ display: "flex", gap: "8px" }}>
               <button
                 className="btn-secondary"
-                style={{ padding: "6px 12px" }}
+                style={{ padding: "8px 12px" }}
                 disabled={page === 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
               >
@@ -154,7 +161,7 @@ export default function CustomersPage() {
               </button>
               <button
                 className="btn-secondary"
-                style={{ padding: "6px 12px" }}
+                style={{ padding: "8px 12px" }}
                 disabled={page >= data.pagination.totalPages}
                 onClick={() => setPage(p => p + 1)}
               >

@@ -65,7 +65,7 @@ export class CustomerService {
 
     const orderCount = await Order.countDocuments({ customerId: customer._id });
 
-    const data = customer.toObject();
+    const data = customer.toObject() as any;
     data._count = { orders: orderCount, communications: (data as any).communications?.length || 0 };
     return data;
   }
@@ -108,8 +108,8 @@ export class CustomerService {
     await Customer.deleteMany({});
     await Order.deleteMany({});
 
-    const customers = [];
-    const orders = [];
+    const customers: any[] = [];
+    const orders: any[] = [];
     const categories = ['Electronics', 'Clothing', 'Home', 'Beauty', 'Sports'];
 
     for (let i = 0; i < count; i++) {

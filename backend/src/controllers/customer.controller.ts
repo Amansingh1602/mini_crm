@@ -15,8 +15,9 @@ export class CustomerController {
   }
 
   static async getById(req: Request, res: Response) {
-    const data = await CustomerService.getCustomerById(req.params.id);
-    if (!data) throw new NotFoundError('Customer', req.params.id);
+    const id = req.params.id as string;
+    const data = await CustomerService.getCustomerById(id);
+    if (!data) throw new NotFoundError('Customer', id);
     res.json({ success: true, data });
   }
 

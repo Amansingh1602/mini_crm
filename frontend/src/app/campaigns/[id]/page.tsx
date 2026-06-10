@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { campaignApi } from "@/lib/api";
 import { useParams } from "next/navigation";
-import { Megaphone, Target, ArrowLeft, BrainCircuit, Rocket, ThumbsUp } from "lucide-react";
+import { Megaphone, Target, ArrowLeft, BrainCircuit, Rocket, ThumbsUp, ChevronRight, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -45,31 +45,51 @@ export default function CampaignDetailPage() {
   };
 
   if (isLoading) {
-    return <div className="skeleton" style={{ height: "400px" }}></div>;
+    return (
+      <div className="fade-in">
+        <div className="skeleton" style={{ height: "40px", width: "140px", marginBottom: "20px" }} />
+        <div className="skeleton" style={{ height: "300px", borderRadius: "16px" }} />
+      </div>
+    );
   }
 
   if (!campaign) {
-    return <div>Campaign not found</div>;
+    return (
+      <div className="fade-in" style={{ padding: "40px", textAlign: "center" }}>
+        <h2 style={{ fontSize: "20px", fontWeight: 700 }}>Campaign not found</h2>
+        <Link href="/campaigns" className="btn-secondary" style={{ marginTop: "16px", textDecoration: "none" }}>
+          Back to Campaigns
+        </Link>
+      </div>
+    );
   }
 
   return (
-    <div className="fade-in">
-      <Link href="/campaigns" style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "var(--text-secondary)", textDecoration: "none", marginBottom: "20px", fontSize: "14px" }}>
-        <ArrowLeft size={16} /> Back to Campaigns
-      </Link>
+    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+      {/* Back Link */}
+      <div>
+        <Link href="/campaigns" style={{ display: "inline-flex", alignItems: "center", gap: "8px", color: "var(--text-secondary)", textDecoration: "none", fontSize: "14px", fontWeight: 500, transition: "color 0.2s" }} className="hover:text-white">
+          <ArrowLeft size={16} /> Back to Campaigns
+        </Link>
+      </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", marginBottom: "24px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: "16px" }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-            <h1 style={{ fontSize: "28px", fontWeight: 700 }} className="gradient-text">{campaign.title}</h1>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px", flexWrap: "wrap" }}>
+            <h1 style={{ fontSize: "32px", fontWeight: 800, letterSpacing: "-0.03em" }} className="gradient-text">
+              {campaign.title}
+            </h1>
             <span className={`badge badge-${campaign.status.toLowerCase()}`}>{campaign.status}</span>
           </div>
-          <p style={{ color: "var(--text-secondary)", fontSize: "14px", maxWidth: "600px" }}>{campaign.goal}</p>
+          <p style={{ color: "var(--text-secondary)", fontSize: "14px", maxWidth: "700px", lineHeight: "1.5" }}>
+            {campaign.goal}
+          </p>
         </div>
 
         <div style={{ display: "flex", gap: "12px" }}>
           {campaign.status === "DRAFT" && (
-            <button onClick={handleApprove} disabled={isProcessing} className="btn-primary" style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}>
+            <button onClick={handleApprove} disabled={isProcessing} className="btn-primary" style={{ background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 4px 14px rgba(16, 185, 129, 0.2)" }}>
               <ThumbsUp size={16} /> Approve
             </button>
           )}
@@ -81,68 +101,82 @@ export default function CampaignDetailPage() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "24px" }}>
-        {/* Main Content */}
+      {/* Content Grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "24px" }}>
+        {/* Main Details Panel */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           {/* Message Preview */}
           <div className="glass-card" style={{ padding: "24px" }}>
-            <h2 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-              <Megaphone size={18} style={{ color: "var(--accent)" }} /> Message Content
+            <h2 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px", color: "#f8fafc" }}>
+              <Megaphone size={18} style={{ color: "var(--accent)" }} /> Message Copywriter
             </h2>
-            <div style={{ padding: "16px", background: "var(--bg-hover)", borderRadius: "12px", border: "1px solid var(--border)", whiteSpace: "pre-wrap", fontSize: "14px", lineHeight: 1.6 }}>
+            <div style={{ padding: "18px", background: "rgba(255, 255, 255, 0.02)", borderRadius: "12px", border: "1px solid var(--border)", whiteSpace: "pre-wrap", fontSize: "14px", lineHeight: 1.6, color: "var(--text-primary)" }}>
               {campaign.message}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px", marginTop: "16px" }}>
-              <div>
-                <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "4px" }}>Channel</div>
-                <div style={{ fontWeight: 500 }}>{campaign.channel}</div>
+            
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "16px", marginTop: "20px" }}>
+              <div style={{ background: "rgba(255,255,255,0.01)", padding: "12px 16px", borderRadius: "10px", border: "1px solid var(--border)" }}>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.02em" }}>Channel</div>
+                <div style={{ fontWeight: 700, fontSize: "14px", color: "#f8fafc", marginTop: "4px" }}>{campaign.channel}</div>
               </div>
-              <div>
-                <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "4px" }}>Offer</div>
-                <div style={{ fontWeight: 500 }}>{campaign.offer || "None"}</div>
+              <div style={{ background: "rgba(255,255,255,0.01)", padding: "12px 16px", borderRadius: "10px", border: "1px solid var(--border)" }}>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.02em" }}>Offer Included</div>
+                <div style={{ fontWeight: 700, fontSize: "14px", color: "#f8fafc", marginTop: "4px" }}>{campaign.offer || "None"}</div>
               </div>
             </div>
           </div>
 
           {/* AI Reasoning */}
           <div className="glass-card" style={{ padding: "24px" }}>
-            <h2 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-              <BrainCircuit size={18} style={{ color: "var(--accent)" }} /> AI Reasoning
+            <h2 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px", color: "#f8fafc" }}>
+              <BrainCircuit size={18} style={{ color: "var(--accent)" }} /> AI Planner Reasoning
             </h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               <div>
-                <div style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 600, marginBottom: "4px" }}>WHY THIS AUDIENCE</div>
-                <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>{campaign.audienceReasoning}</div>
+                <div style={{ fontSize: "11px", color: "var(--accent)", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "6px" }}>Why this audience?</div>
+                <div style={{ fontSize: "14px", color: "var(--text-secondary)", lineHeight: "1.5" }}>{campaign.audienceReasoning}</div>
               </div>
               <div>
-                <div style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 600, marginBottom: "4px" }}>WHY THIS MESSAGE</div>
-                <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>{campaign.messageReasoning}</div>
+                <div style={{ fontSize: "11px", color: "var(--accent)", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "6px" }}>Why this copywriting strategy?</div>
+                <div style={{ fontSize: "14px", color: "var(--text-secondary)", lineHeight: "1.5" }}>{campaign.messageReasoning}</div>
               </div>
               <div>
-                <div style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 600, marginBottom: "4px" }}>WHY {campaign.channel}</div>
-                <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>{campaign.channelReasoning}</div>
+                <div style={{ fontSize: "11px", color: "var(--accent)", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "6px" }}>Why channel {campaign.channel}?</div>
+                <div style={{ fontSize: "14px", color: "var(--text-secondary)", lineHeight: "1.5" }}>{campaign.channelReasoning}</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar Panel */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {/* Audience Summary */}
+          {/* Audience Summary Card */}
           <div className="glass-card" style={{ padding: "24px" }}>
-            <h2 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-              <Target size={18} style={{ color: "var(--accent)" }} /> Audience
+            <h2 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px", color: "#f8fafc" }}>
+              <Target size={18} style={{ color: "var(--accent)" }} /> Segment Audience
             </h2>
-            <div style={{ fontWeight: 500, marginBottom: "4px" }}>{campaign.audience.name}</div>
-            <div style={{ fontSize: "24px", fontWeight: 700, color: "var(--accent)" }}>{campaign.audience.customerCount.toLocaleString()}</div>
-            <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>Targeted Customers</div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: "16px", color: "#f8fafc" }}>{campaign.audience.name}</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "6px", marginTop: "14px" }}>
+                <span style={{ fontSize: "36px", fontWeight: 800, color: "var(--accent)", letterSpacing: "-0.02em" }}>
+                  {campaign.audience.customerCount.toLocaleString()}
+                </span>
+                <span style={{ fontSize: "13px", color: "var(--text-muted)", fontWeight: 500 }}>Customers</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--text-secondary)", marginTop: "14px", paddingTop: "14px", borderTop: "1px solid var(--border)" }}>
+                <span>Status:</span>
+                <span style={{ color: "var(--success)", fontWeight: 600 }}>Active Dynamic Cohort</span>
+              </div>
+            </div>
           </div>
 
-          {/* Real-time Analytics */}
+          {/* Performance Analytics Card */}
           {campaign.analytics && (
             <div className="glass-card" style={{ padding: "24px" }}>
-              <h2 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "16px" }}>Performance</h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <h2 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px", color: "#f8fafc" }}>
+                <BarChart3 size={18} style={{ color: "var(--accent)" }} /> Campaign Performance
+              </h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 {[
                   { label: "Sent", value: campaign.analytics.sent, color: "var(--info)" },
                   { label: "Delivered", value: campaign.analytics.delivered, color: "var(--success)" },
@@ -150,19 +184,34 @@ export default function CampaignDetailPage() {
                   { label: "Clicked", value: campaign.analytics.clicked, color: "var(--accent)" },
                   { label: "Purchased", value: campaign.analytics.purchased, color: "#a78bfa" },
                   { label: "Failed", value: campaign.analytics.failed, color: "var(--danger)" },
-                ].map((stat) => (
-                  <div key={stat.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>{stat.label}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <div style={{ fontSize: "14px", fontWeight: 600 }}>{stat.value.toLocaleString()}</div>
-                      {campaign.analytics.sent > 0 && stat.label !== "Sent" && (
-                        <div style={{ fontSize: "11px", color: stat.color, width: "36px", textAlign: "right" }}>
-                          {Math.round((stat.value / campaign.analytics.sent) * 100)}%
+                ].map((stat) => {
+                  const percent = campaign.analytics.sent > 0 && stat.label !== "Sent"
+                    ? Math.round((stat.value / campaign.analytics.sent) * 100)
+                    : 0;
+
+                  return (
+                    <div key={stat.label} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
+                        <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>{stat.label}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ fontWeight: 700, color: "#f8fafc" }}>{stat.value.toLocaleString()}</span>
+                          {campaign.analytics.sent > 0 && stat.label !== "Sent" && (
+                            <span style={{ fontSize: "11px", color: stat.color, fontWeight: 600, width: "32px", textAlign: "right" }}>
+                              {percent}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Progress Bar decoration */}
+                      {stat.label !== "Sent" && (
+                        <div style={{ width: "100%", height: "4px", background: "rgba(255,255,255,0.02)", borderRadius: "2px", overflow: "hidden" }}>
+                          <div style={{ width: `${percent}%`, height: "100%", background: stat.color, borderRadius: "2px", transition: "width 0.5s ease" }} />
                         </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

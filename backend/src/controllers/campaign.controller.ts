@@ -14,37 +14,41 @@ export class CampaignController {
 
   static async autonomous(req: Request, res: Response) {
     const { goal } = req.body;
-    const data = await CampaignService.autonomousAgent(goal);
+    const data = await CampaignService.generateAutonomous(goal);
     res.status(201).json({ success: true, data });
   }
 
   static async getAll(_req: Request, res: Response) {
-    const data = await CampaignService.getAllCampaigns();
+    const data = await CampaignService.getCampaigns();
     res.json({ success: true, data });
   }
 
   static async getById(req: Request, res: Response) {
-    const data = await CampaignService.getCampaignById(req.params.id);
-    if (!data) throw new NotFoundError('Campaign', req.params.id);
+    const id = req.params.id as string;
+    const data = await CampaignService.getCampaignById(id);
+    if (!data) throw new NotFoundError('Campaign', id);
     res.json({ success: true, data });
   }
 
   static async approve(req: Request, res: Response) {
-    const result = await CampaignService.approveCampaign(req.params.id);
-    if (result.status === 404) throw new NotFoundError('Campaign', req.params.id);
+    const id = req.params.id as string;
+    const result = await CampaignService.approveCampaign(id);
+    if (result.status === 404) throw new NotFoundError('Campaign', id);
     if (result.status === 400) throw new AppError(400, result.message!);
     res.json({ success: true, data: result.campaign });
   }
 
   static async launch(req: Request, res: Response) {
-    const result = await CampaignService.launchCampaign(req.params.id);
-    if (result.status === 404) throw new NotFoundError('Campaign', req.params.id);
+    const id = req.params.id as string;
+    const result = await CampaignService.launchCampaign(id);
+    if (result.status === 404) throw new NotFoundError('Campaign', id);
     if (result.status === 400) throw new AppError(400, result.message!);
     res.json({ success: true, data: result.data });
   }
 
   static async insights(req: Request, res: Response) {
-    const data = await CampaignService.generateInsights(req.params.id);
+    const id = req.params.id as string;
+    const data = await CampaignService.generateInsights(id);
     res.json({ success: true, data });
   }
 }

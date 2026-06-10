@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -11,6 +12,8 @@ import {
   Sparkles,
   Zap,
   Database,
+  Menu,
+  X,
 } from "lucide-react";
 
 const navItems = [
@@ -24,137 +27,166 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <aside className="sidebar">
-      {/* Logo */}
-      <div
-        className="sidebar-logo"
-        style={{
-          padding: "24px 20px",
-          borderBottom: "1px solid var(--border)",
-        }}
+    <>
+      {/* Mobile Sidebar Hamburger Trigger */}
+      <button
+        className="mobile-sidebar-toggle"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label="Toggle Menu"
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div
-            style={{
-              width: "36px",
-              height: "36px",
-              borderRadius: "10px",
-              background: "linear-gradient(135deg, #6366f1, #7c3aed)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Zap size={20} color="white" />
-          </div>
-          <div>
+        {isOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+
+      {/* Mobile Sidebar Backdrop Overlay */}
+      <div
+        className={`sidebar-overlay ${isOpen ? "open" : ""}`}
+        onClick={() => setIsOpen(false)}
+      />
+
+      <aside className={`sidebar ${isOpen ? "open" : ""}`}>
+        {/* Logo */}
+        <div
+          className="sidebar-logo"
+          style={{
+            padding: "28px 24px",
+            borderBottom: "1px solid var(--border)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <div
               style={{
-                fontSize: "16px",
-                fontWeight: 700,
-                letterSpacing: "-0.01em",
-              }}
-              className="gradient-text"
-            >
-              Xeno CRM
-            </div>
-            <div
-              style={{
-                fontSize: "11px",
-                color: "var(--text-muted)",
-                marginTop: "2px",
-              }}
-            >
-              Autonomous Campaign Planner
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="sidebar-nav" style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: "4px" }}>
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="sidebar-link"
-              style={{
+                width: "38px",
+                height: "38px",
+                borderRadius: "12px",
+                background: "linear-gradient(135deg, #6366f1, #7c3aed)",
                 display: "flex",
                 alignItems: "center",
-                gap: "12px",
-                padding: "10px 14px",
-                borderRadius: "10px",
-                fontSize: "14px",
-                fontWeight: isActive ? 600 : 400,
-                color: isActive
-                  ? item.accent
-                    ? "#a78bfa"
-                    : "var(--text-primary)"
-                  : "var(--text-secondary)",
-                background: isActive
-                  ? item.accent
-                    ? "rgba(99, 102, 241, 0.1)"
-                    : "var(--bg-hover)"
-                  : "transparent",
-                textDecoration: "none",
-                transition: "all 0.2s",
-                border: isActive && item.accent ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid transparent",
+                justifyContent: "center",
+                boxShadow: "0 0 20px rgba(99, 102, 241, 0.4)",
               }}
             >
-              <Icon
-                size={18}
+              <Zap size={20} color="white" />
+            </div>
+            <div>
+              <div
                 style={{
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  letterSpacing: "-0.02em",
+                  color: "#f8fafc",
+                }}
+              >
+                Xeno <span style={{ color: "var(--accent)" }}>CRM</span>
+              </div>
+              <div
+                style={{
+                  fontSize: "10px",
+                  color: "var(--text-muted)",
+                  marginTop: "2px",
+                  letterSpacing: "0.02em",
+                  textTransform: "uppercase",
+                  fontWeight: 600,
+                }}
+              >
+                Autonomous AI Agent
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="sidebar-nav" style={{ flex: 1, padding: "24px 16px", display: "flex", flexDirection: "column", gap: "6px" }}>
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`sidebar-link ${isActive ? "active" : ""}`}
+                onClick={() => setIsOpen(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "12px 16px",
+                  borderRadius: "12px",
+                  fontSize: "14px",
+                  fontWeight: isActive ? 600 : 500,
                   color: isActive
                     ? item.accent
-                      ? "#818cf8"
-                      : "var(--accent)"
-                    : "var(--text-muted)",
+                      ? "#c084fc"
+                      : "#f8fafc"
+                    : "var(--text-secondary)",
+                  background: isActive
+                    ? item.accent
+                      ? "rgba(167, 139, 250, 0.08)"
+                      : "rgba(255, 255, 255, 0.04)"
+                    : "transparent",
+                  borderLeft: isActive
+                    ? item.accent
+                      ? "3px solid #a78bfa"
+                      : "3px solid var(--accent)"
+                    : "3px solid transparent",
+                  textDecoration: "none",
+                  transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
                 }}
-              />
-              {item.label}
-              {item.accent && (
-                <span
+              >
+                <Icon
+                  size={18}
                   style={{
-                    marginLeft: "auto",
-                    fontSize: "9px",
-                    fontWeight: 700,
-                    padding: "2px 8px",
-                    borderRadius: "9999px",
-                    background: "linear-gradient(135deg, #6366f1, #7c3aed)",
-                    color: "white",
-                    letterSpacing: "0.05em",
+                    color: isActive
+                      ? item.accent
+                        ? "#a78bfa"
+                        : "var(--accent)"
+                      : "var(--text-muted)",
+                    transition: "all 0.2s",
                   }}
-                >
-                  AI
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
+                />
+                <span>{item.label}</span>
+                {item.accent && (
+                  <span
+                    style={{
+                      marginLeft: "auto",
+                      fontSize: "9px",
+                      fontWeight: 700,
+                      padding: "2px 8px",
+                      borderRadius: "9999px",
+                      background: "linear-gradient(135deg, #a78bfa, #ec4899)",
+                      color: "white",
+                      letterSpacing: "0.05em",
+                      boxShadow: "0 0 10px rgba(167, 139, 250, 0.4)",
+                    }}
+                  >
+                    AI
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
 
-      {/* Footer */}
-      <div
-        className="sidebar-footer"
-        style={{
-          padding: "16px 20px",
-          borderTop: "1px solid var(--border)",
-          fontSize: "11px",
-          color: "var(--text-muted)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-          <Database size={12} />
-          AI-Native CRM
+        {/* Footer */}
+        <div
+          className="sidebar-footer"
+          style={{
+            padding: "20px 24px",
+            borderTop: "1px solid var(--border)",
+            fontSize: "11px",
+            color: "var(--text-muted)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px", fontWeight: 500, color: "var(--text-secondary)" }}>
+            <Database size={12} style={{ color: "var(--accent)" }} />
+            AI-Native Engine v1.0
+          </div>
+          <div>Built for Xeno SDE Internship</div>
         </div>
-        <div>Built for Xeno SDE Internship</div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

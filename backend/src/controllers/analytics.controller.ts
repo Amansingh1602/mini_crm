@@ -9,9 +9,10 @@ export class AnalyticsController {
   }
 
   static async getCampaignAnalytics(req: Request, res: Response) {
-    const data = await AnalyticsService.getCampaignAnalytics(req.params.id);
+    const id = req.params.id as string;
+    const data = await AnalyticsService.getCampaignAnalytics(id);
     if (!data) {
-      throw new NotFoundError('Campaign', req.params.id);
+      throw new NotFoundError('Campaign', id);
     }
     res.json({ success: true, data });
   }
