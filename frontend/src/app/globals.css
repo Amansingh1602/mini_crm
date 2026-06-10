@@ -24,11 +24,11 @@
   padding: 0;
 }
 
-html {
+html { overflow-x: hidden; max-width: 100vw;
   scroll-behavior: smooth;
 }
 
-body {
+body { overflow-x: hidden; max-width: 100vw;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -56,7 +56,7 @@ body {
 }
 
 /* Glassmorphism Card */
-.glass-card {
+.glass-card { width: 100%; max-width: 100vw; overflow-wrap: anywhere;
   background: rgba(22, 22, 31, 0.7);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border);

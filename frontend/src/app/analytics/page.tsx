@@ -44,12 +44,12 @@ export default function AnalyticsPage() {
         <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>Performance across all channels and campaigns</p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "24px" }}>
-        <div className="glass-card" style={{ padding: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "24px", marginBottom: "24px" }}>
+        <div className="glass-card" style={{ padding: "24px", minWidth: 0 }}>
           <h2 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
             <BarChart3 size={18} style={{ color: "var(--accent)" }} /> Channel Performance (Deliveries)
           </h2>
-          <div style={{ height: "300px", width: "100%" }}>
+          <div style={{ height: "300px", width: "100%", minWidth: 0, minHeight: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={channelMetrics} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -69,11 +69,11 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: "24px" }}>
+        <div className="glass-card" style={{ padding: "24px", minWidth: 0 }}>
           <h2 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
             <MessageSquare size={18} style={{ color: "var(--accent)" }} /> Channel Effectiveness (Open Rate %)
           </h2>
-          <div style={{ height: "300px", width: "100%" }}>
+          <div style={{ height: "300px", width: "100%", minWidth: 0, minHeight: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={channelMetrics.map((c: any) => ({ ...c, openRate: c.delivered > 0 ? (c.opened / c.delivered) * 100 : 0 }))}
@@ -85,7 +85,7 @@ export default function AnalyticsPage() {
                 <RechartsTooltip
                   cursor={{ fill: "rgba(255,255,255,0.05)" }}
                   contentStyle={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "8px", color: "var(--text-primary)" }}
-                  formatter={(value: number) => [`${value.toFixed(1)}%`, 'Open Rate']}
+                  formatter={(value: any) => [`${Number(value || 0).toFixed(1)}%`, 'Open Rate']}
                 />
                 <Bar dataKey="openRate" radius={[4, 4, 0, 0]}>
                   {channelMetrics.map((entry: any, index: number) => (
@@ -98,9 +98,9 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="glass-card" style={{ padding: "24px" }}>
+      <div className="glass-card" style={{ padding: "24px", overflowX: "auto" }}>
         <h2 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "16px" }}>Channel Breakdown</h2>
-        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", minWidth: "600px" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border)" }}>
               <th style={{ padding: "12px 16px", fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Channel</th>

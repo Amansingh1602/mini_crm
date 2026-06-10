@@ -58,7 +58,7 @@ export default function CampaignDetailPage() {
         <ArrowLeft size={16} /> Back to Campaigns
       </Link>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", marginBottom: "24px" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
             <h1 style={{ fontSize: "28px", fontWeight: 700 }} className="gradient-text">{campaign.title}</h1>
@@ -81,7 +81,7 @@ export default function CampaignDetailPage() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "24px" }}>
         {/* Main Content */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           {/* Message Preview */}
@@ -92,7 +92,7 @@ export default function CampaignDetailPage() {
             <div style={{ padding: "16px", background: "var(--bg-hover)", borderRadius: "12px", border: "1px solid var(--border)", whiteSpace: "pre-wrap", fontSize: "14px", lineHeight: 1.6 }}>
               {campaign.message}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginTop: "16px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px", marginTop: "16px" }}>
               <div>
                 <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "4px" }}>Channel</div>
                 <div style={{ fontWeight: 500 }}>{campaign.channel}</div>

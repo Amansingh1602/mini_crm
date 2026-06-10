@@ -13,7 +13,7 @@ export default function AudiencesPage() {
 
   return (
     <div className="fade-in">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "16px", marginBottom: "24px" }}>
         <div>
           <h1 style={{ fontSize: "28px", fontWeight: 700 }} className="gradient-text">Audiences</h1>
           <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>AI-generated customer segments</p>
@@ -24,7 +24,7 @@ export default function AudiencesPage() {
       </div>
 
       {isLoading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
           {[1, 2, 3].map((i) => (
             <div key={i} className="skeleton" style={{ height: "160px" }}></div>
           ))}
@@ -35,7 +35,7 @@ export default function AudiencesPage() {
           <div style={{ color: "var(--text-secondary)" }}>No audiences found. Generate one using the AI Agent.</div>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
           {data?.data.map((audience: any) => (
             <div key={audience.id} className="glass-card" style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>

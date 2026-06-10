@@ -192,7 +192,7 @@ export default function AgentPage() {
 
       {/* Example Prompts */}
       {messages.length <= 1 && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px", marginBottom: "20px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "10px", marginBottom: "20px" }}>
           {[
             "Bring back customers who haven't purchased in 60 days",
             "Increase repeat purchases from high-value customers",
@@ -278,7 +278,7 @@ export default function AgentPage() {
 
         {/* Action Buttons */}
         {campaignResult && !isProcessing && (
-          <div style={{ display: "flex", gap: "12px", padding: "8px 0" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", padding: "8px 0" }}>
             <button onClick={handleApprove} className="btn-primary" style={{ background: "linear-gradient(135deg, #22c55e, #16a34a)" }}>
               <ThumbsUp size={16} />
               Approve Campaign

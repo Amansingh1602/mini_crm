@@ -40,14 +40,14 @@ export default function CustomersPage() {
 
   return (
     <div className="fade-in">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "16px", marginBottom: "24px" }}>
         <div>
           <h1 style={{ fontSize: "28px", fontWeight: 700 }} className="gradient-text">Customers</h1>
           <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>Manage your customer database</p>
         </div>
 
-        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-          <div style={{ position: "relative", width: "300px" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px" }}>
+          <div style={{ position: "relative", width: "100%", maxWidth: "300px" }}>
             <Search size={16} style={{ position: "absolute", left: "12px", top: "14px", color: "var(--text-muted)" }} />
             <input
               type="text"
@@ -81,8 +81,8 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      <div className="glass-card" style={{ overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+      <div className="glass-card" style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", minWidth: "600px" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border)", background: "rgba(0,0,0,0.2)" }}>
               <th style={{ padding: "16px 20px", fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Name</th>

@@ -78,7 +78,7 @@ export default function DashboardPage() {
         <h1 style={{ fontSize: "28px", fontWeight: 700, marginBottom: "8px" }} className="gradient-text">
           Dashboard
         </h1>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginTop: "24px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginTop: "24px" }}>
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="skeleton" style={{ height: "120px", borderRadius: "16px" }} />
           ))}
@@ -106,7 +106,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Overview Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginBottom: "24px" }}>
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
@@ -145,7 +145,7 @@ export default function DashboardPage() {
           <h2 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "16px", color: "var(--text-primary)" }}>
             Communication Metrics
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px" }}>
             {metricCards.map((card) => {
               const Icon = card.icon;
               return (

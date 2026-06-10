@@ -26,22 +26,10 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "260px",
-        height: "100vh",
-        background: "var(--bg-secondary)",
-        borderRight: "1px solid var(--border)",
-        display: "flex",
-        flexDirection: "column",
-        zIndex: 50,
-      }}
-    >
+    <aside className="sidebar">
       {/* Logo */}
       <div
+        className="sidebar-logo"
         style={{
           padding: "24px 20px",
           borderBottom: "1px solid var(--border)",
@@ -86,7 +74,7 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: "4px" }}>
+      <nav className="sidebar-nav" style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: "4px" }}>
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
@@ -95,6 +83,7 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              className="sidebar-link"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -152,6 +141,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div
+        className="sidebar-footer"
         style={{
           padding: "16px 20px",
           borderTop: "1px solid var(--border)",

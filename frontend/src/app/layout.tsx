@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
@@ -15,6 +15,12 @@ export const metadata: Metadata = {
   keywords: ["CRM", "AI", "Campaign", "Marketing", "Xeno"],
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,9 +30,9 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="antialiased">
         <Providers>
-          <div style={{ display: "flex", minHeight: "100vh" }}>
+          <div className="app-container">
             <Sidebar />
-            <main style={{ flex: 1, marginLeft: "260px", padding: "24px 32px" }}>
+            <main className="main-content">
               {children}
             </main>
           </div>
