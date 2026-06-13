@@ -1,15 +1,16 @@
 ﻿import OpenAI from 'openai';
 import { env } from '../config/env';
 
-let openaiClient: OpenAI | null = null;
+let groqClient: OpenAI | null = null;
 
-export function getOpenAI(): OpenAI {
-  if (!openaiClient) {
-    openaiClient = new OpenAI({
-      apiKey: env.OPENAI_API_KEY,
+export function getGroqClient(): OpenAI {
+  if (!groqClient) {
+    groqClient = new OpenAI({
+      apiKey: env.GROQ_API_KEY,
+      baseURL: env.GROQ_BASE_URL,
     });
   }
-  return openaiClient;
+  return groqClient;
 }
 
-export default getOpenAI;
+export default getGroqClient;

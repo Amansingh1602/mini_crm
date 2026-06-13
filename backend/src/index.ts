@@ -1,10 +1,11 @@
-﻿import { createServer } from 'http';
+import { createServer } from 'http';
 import app from './app';
 import { env, validateEnv } from './config/env';
 import { logger } from './lib/logger';
 import { connectDB, disconnectDB } from './lib/mongoose';
 import { startWorkers, stopWorkers } from './queues/workers';
 import { initSocket } from './lib/socket';
+import { closeRedis } from './lib/redis';
 
 async function main() {
   validateEnv();
@@ -36,6 +37,7 @@ async function main() {
     
     server.close(async () => {
       await stopWorkers();
+      await closeRedis();
       await disconnectDB();
       logger.info('All connections closed');
       process.exit(0);

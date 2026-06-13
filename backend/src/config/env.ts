@@ -13,9 +13,10 @@ export const env = {
   // Redis
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
 
-  // OpenAI
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
-  OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+  // Groq AI
+  GROQ_API_KEY: process.env.GROQ_API_KEY || '',
+  GROQ_BASE_URL: process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1',
+  GROQ_MODEL: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
 
   // Channel Service
   CHANNEL_SERVICE_URL: process.env.CHANNEL_SERVICE_URL || 'http://localhost:3002',
