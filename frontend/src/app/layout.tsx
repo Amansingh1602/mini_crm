@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
 import { Providers } from "@/components/Providers";
+import { AuthGuard } from "@/components/AuthGuard";
+import Script from "next/script";
+
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -35,19 +37,14 @@ export default function RootLayout({
     <html lang="en" className={`${outfit.variable} ${jakarta.variable}`}>
       <body className="antialiased">
         <Providers>
-          <div className="app-container">
-            {/* Ambient Animated Glow Backdrops */}
-            <div className="ambient-background">
-              <div className="ambient-orb orb-1"></div>
-              <div className="ambient-orb orb-2"></div>
-              <div className="ambient-orb orb-3"></div>
-            </div>
-            <Sidebar />
-            <main className="main-content">
-              {children}
-            </main>
-          </div>
+          <AuthGuard>
+            {children}
+          </AuthGuard>
         </Providers>
+        <Script 
+          src="https://accounts.google.com/gsi/client" 
+          strategy="beforeInteractive" 
+        />
       </body>
     </html>
   );

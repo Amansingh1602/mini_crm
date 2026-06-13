@@ -89,7 +89,7 @@ export default function CampaignDetailPage() {
 
         <div style={{ display: "flex", gap: "12px" }}>
           {campaign.status === "DRAFT" && (
-            <button onClick={handleApprove} disabled={isProcessing} className="btn-primary" style={{ background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 4px 14px rgba(16, 185, 129, 0.2)" }}>
+            <button onClick={handleApprove} disabled={isProcessing} className="btn-primary" style={{ background: "var(--success)" }}>
               <ThumbsUp size={16} /> Approve
             </button>
           )}

@@ -16,10 +16,17 @@ class ApiError extends Error {
 async function request<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   const { method = 'GET', body, headers = {} } = options;
 
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const authHeaders: Record<string, string> = {};
+  if (token) {
+    authHeaders['Authorization'] = `Bearer ${token}`;
+  }
+
   const config: RequestInit = {
     method,
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...headers,
     },
   };
@@ -95,4 +102,12 @@ export const analyticsApi = {
   dashboard: () => request<any>('/analytics/dashboard'),
   campaign: (id: string) => request<any>(`/analytics/campaigns/${id}`),
   channels: () => request<any>('/analytics/channels'),
+};
+
+// ─── Auth APIs ──────────────────────────────────────────
+export const authApi = {
+  signup: (body: any) => request<any>('/auth/signup', { method: 'POST', body }),
+  login: (body: any) => request<any>('/auth/login', { method: 'POST', body }),
+  googleLogin: (credential: string) => request<any>('/auth/google', { method: 'POST', body: { credential } }),
+  me: () => request<any>('/auth/me'),
 };

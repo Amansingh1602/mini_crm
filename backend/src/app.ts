@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { apiLimiter } from './middleware/rateLimit';
@@ -10,6 +10,8 @@ import audienceRoutes from './routes/audience.routes';
 import campaignRoutes from './routes/campaign.routes';
 import receiptRoutes from './routes/receipt.routes';
 import analyticsRoutes from './routes/analytics.routes';
+import authRoutes from './routes/auth.routes';
+import { auth } from './middleware/auth';
 
 const app = express();
 
@@ -34,22 +36,23 @@ app.use((req, _res, next) => {
 
 app.use('/api/', apiLimiter);
 
-// ΓöÇΓöÇΓöÇ Health Check ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Health Check ─────────────────────────────────────────────────────────────
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'xeno-crm', timestamp: new Date().toISOString() });
 });
 
-// ΓöÇΓöÇΓöÇ Routes ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Routes ──────────────────────────────────────────────────────────────────
 
-app.use('/api/customers', customerRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/audiences', audienceRoutes);
-app.use('/api/campaigns', campaignRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/customers', auth, customerRoutes);
+app.use('/api/orders', auth, orderRoutes);
+app.use('/api/audiences', auth, audienceRoutes);
+app.use('/api/campaigns', auth, campaignRoutes);
 app.use('/api/receipts', receiptRoutes);
-app.use('/api/analytics', analyticsRoutes);
+app.use('/api/analytics', auth, analyticsRoutes);
 
-// ΓöÇΓöÇΓöÇ 404 Handler ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── 404 Handler ──────────────────────────────────────────────────────────────
 
 app.use((_req, res) => {
   res.status(404).json({ success: false, error: 'Route not found', code: 'NOT_FOUND' });

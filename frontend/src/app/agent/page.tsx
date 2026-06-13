@@ -162,17 +162,16 @@ export default function AgentPage() {
         <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
           <div
             style={{
-              width: "44px",
-              height: "44px",
-              borderRadius: "12px",
-              background: "linear-gradient(135deg, #6366f1, #7c3aed)",
+              width: "40px",
+              height: "40px",
+              borderRadius: "8px",
+              background: "var(--accent)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 0 20px rgba(99, 102, 241, 0.3)",
             }}
           >
-            <Sparkles size={20} color="white" />
+            <Sparkles size={18} color="white" />
           </div>
           <div>
             <h1 style={{ fontSize: "24px", fontWeight: 800, letterSpacing: "-0.02em" }} className="gradient-text">

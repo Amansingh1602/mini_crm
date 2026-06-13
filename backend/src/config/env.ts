@@ -27,6 +27,10 @@ export const env = {
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000', 10),
   RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
+
+  // Auth Configuration
+  JWT_SECRET: process.env.JWT_SECRET || 'xeno-crm-super-secret-key-change-me',
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
 } as const;
 
 // Validate required env vars

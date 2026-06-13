@@ -100,7 +100,7 @@ export default function DashboardPage() {
             Your AI-powered marketing command center
           </p>
         </div>
-        <Link href="/agent" className="btn-primary pulse-glow" style={{ textDecoration: "none" }}>
+        <Link href="/agent" className="btn-primary" style={{ textDecoration: "none" }}>
           <Sparkles size={16} />
           Launch AI Agent
         </Link>
@@ -121,7 +121,6 @@ export default function DashboardPage() {
                   flexDirection: "column",
                   justifyContent: "space-between",
                   gap: "16px",
-                  borderLeft: `3px solid ${card.color}`,
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -132,22 +131,23 @@ export default function DashboardPage() {
                     style={{
                       width: "36px",
                       height: "36px",
-                      borderRadius: "10px",
-                      background: card.glowColor,
+                      borderRadius: "8px",
+                      background: "rgba(255, 255, 255, 0.03)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      border: "1px solid var(--border)",
                     }}
                   >
-                    <Icon size={18} style={{ color: card.color }} />
+                    <Icon size={16} style={{ color: "var(--text-primary)" }} />
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: "32px", fontWeight: 800, letterSpacing: "-0.02em", color: "#f8fafc" }}>
+                  <div style={{ fontSize: "28px", fontWeight: 700, letterSpacing: "-0.02em", color: "#f8fafc" }}>
                     {card.value}
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>
-                    <span style={{ color: card.color, fontWeight: 600 }}>Active</span> monitoring
+                    <span style={{ color: "var(--success)", fontWeight: 600 }}>Active</span>
                   </div>
                 </div>
               </div>

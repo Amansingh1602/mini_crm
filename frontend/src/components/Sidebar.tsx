@@ -14,7 +14,9 @@ import {
   Database,
   Menu,
   X,
+  LogOut,
 } from "lucide-react";
+import { useAuthStore } from "@/lib/store/useAuthStore";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -28,6 +30,7 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const { user, logout } = useAuthStore();
 
   return (
     <>
@@ -58,17 +61,16 @@ export default function Sidebar() {
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <div
               style={{
-                width: "38px",
-                height: "38px",
-                borderRadius: "12px",
-                background: "linear-gradient(135deg, #6366f1, #7c3aed)",
+                width: "36px",
+                height: "36px",
+                borderRadius: "8px",
+                background: "var(--accent)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 0 20px rgba(99, 102, 241, 0.4)",
               }}
             >
-              <Zap size={20} color="white" />
+              <Zap size={18} color="white" />
             </div>
             <div>
               <div
@@ -113,38 +115,22 @@ export default function Sidebar() {
                   display: "flex",
                   alignItems: "center",
                   gap: "12px",
-                  padding: "12px 16px",
-                  borderRadius: "12px",
-                  fontSize: "14px",
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                  fontSize: "13.5px",
                   fontWeight: isActive ? 600 : 500,
-                  color: isActive
-                    ? item.accent
-                      ? "#c084fc"
-                      : "#f8fafc"
-                    : "var(--text-secondary)",
-                  background: isActive
-                    ? item.accent
-                      ? "rgba(167, 139, 250, 0.08)"
-                      : "rgba(255, 255, 255, 0.04)"
-                    : "transparent",
-                  borderLeft: isActive
-                    ? item.accent
-                      ? "3px solid #a78bfa"
-                      : "3px solid var(--accent)"
-                    : "3px solid transparent",
+                  color: isActive ? "#ffffff" : "var(--text-secondary)",
+                  background: isActive ? "var(--bg-hover)" : "transparent",
+                  borderLeft: isActive ? "3px solid var(--accent)" : "3px solid transparent",
                   textDecoration: "none",
-                  transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                  transition: "all 0.15s ease",
                 }}
               >
                 <Icon
-                  size={18}
+                  size={16}
                   style={{
-                    color: isActive
-                      ? item.accent
-                        ? "#a78bfa"
-                        : "var(--accent)"
-                      : "var(--text-muted)",
-                    transition: "all 0.2s",
+                    color: isActive ? "var(--accent)" : "var(--text-muted)",
+                    transition: "all 0.15s ease",
                   }}
                 />
                 <span>{item.label}</span>
@@ -154,12 +140,11 @@ export default function Sidebar() {
                       marginLeft: "auto",
                       fontSize: "9px",
                       fontWeight: 700,
-                      padding: "2px 8px",
-                      borderRadius: "9999px",
-                      background: "linear-gradient(135deg, #a78bfa, #ec4899)",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      background: "var(--accent)",
                       color: "white",
-                      letterSpacing: "0.05em",
-                      boxShadow: "0 0 10px rgba(167, 139, 250, 0.4)",
+                      letterSpacing: "0.03em",
                     }}
                   >
                     AI
@@ -169,6 +154,100 @@ export default function Sidebar() {
             );
           })}
         </nav>
+
+        {/* User Profile & Logout */}
+        {user && (
+          <div
+            className="sidebar-user"
+            style={{
+              padding: "16px 20px",
+              borderTop: "1px solid var(--border)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+              {user.picture ? (
+                <img
+                  src={user.picture}
+                  alt={user.name}
+                  style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "cover", border: "1px solid var(--border)" }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "50%",
+                    background: "var(--accent-glow)",
+                    border: "1px solid var(--accent)",
+                    color: "var(--accent)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                  }}
+                >
+                  {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+                </div>
+              )}
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: "13.5px",
+                    fontWeight: 600,
+                    color: "#ffffff",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {user.name}
+                </div>
+                <div
+                  style={{
+                    fontSize: "11.5px",
+                    color: "var(--text-muted)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {user.email}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => logout()}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "var(--text-muted)",
+                cursor: "pointer",
+                padding: "6px",
+                borderRadius: "6px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--danger)";
+                e.currentTarget.style.background = "var(--danger-glow)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--text-muted)";
+                e.currentTarget.style.background = "transparent";
+              }}
+              title="Log Out"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        )}
 
         {/* Footer */}
         <div
