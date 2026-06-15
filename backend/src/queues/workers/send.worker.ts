@@ -1,9 +1,9 @@
 import { Worker, Job } from 'bullmq';
-import axios from 'axios';
 import { logger } from '../../lib/logger';
 import { env } from '../../config/env';
 import { Communication } from '../../models/Communication';
 import { CampaignAnalytics } from '../../models/CampaignAnalytics';
+import { simulateDelivery } from '../../lib/channel/simulator';
 import { getDeadLetterQueue, getConnectionOptions, QUEUE_NAMES } from '../queue';
 
 let sendWorker: Worker | null = null;
@@ -30,26 +30,19 @@ export function startSendWorker(): Worker {
       logger.info({ jobId: job.id, communicationId, channel, attempt: job.attemptsMade + 1 }, 'Processing send job');
 
       try {
-        const response = await axios.post(
-          `${env.CHANNEL_SERVICE_URL || 'http://localhost:3002'}/send`,
-          {
-            communicationId,
-            campaignId,
-            customerId,
-            channel,
-            message,
-            recipient: {
-              email: customerEmail,
-              phone: customerPhone,
-              name: customerName,
-            },
-            callbackUrl: env.CRM_CALLBACK_URL || 'http://localhost:3001/api/receipts',
+        // Call the merged channel simulator directly
+        await simulateDelivery({
+          communicationId,
+          campaignId,
+          customerId,
+          channel,
+          message,
+          recipient: {
+            email: customerEmail,
+            phone: customerPhone,
+            name: customerName,
           },
-          {
-            timeout: 10000,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
+        });
 
         await Communication.findByIdAndUpdate(communicationId, {
           status: 'SENT',
@@ -62,7 +55,7 @@ export function startSendWorker(): Worker {
           { upsert: true }
         );
 
-        logger.info({ communicationId, channelResponse: response.data }, 'Communication sent to channel service');
+        logger.info({ communicationId }, 'Communication sent to channel simulator');
       } catch (error: any) {
         logger.error({ err: error, communicationId, attempt: job.attemptsMade + 1 }, 'Failed to send communication');
 

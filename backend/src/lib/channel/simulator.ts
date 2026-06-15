@@ -1,19 +1,11 @@
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
-import pino from 'pino';
-import { config } from './config';
-
-const logger = pino({
-  level: config.NODE_ENV === 'production' ? 'info' : 'debug',
-  transport: config.NODE_ENV !== 'production'
-    ? { target: 'pino-pretty', options: { colorize: true, translateTime: 'SYS:standard', ignore: 'pid,hostname' } }
-    : undefined,
-  base: { service: 'xeno-channel' },
-});
+import { logger } from '../logger';
+import { env } from '../../config/env';
 
 // ─── Types ────────────────────────────────────────────────
 
-interface SendRequest {
+export interface SendRequest {
   communicationId: string;
   campaignId: string;
   customerId: string;
@@ -27,7 +19,7 @@ interface SendRequest {
   callbackUrl?: string;
 }
 
-type EventType = 'SENT' | 'DELIVERED' | 'FAILED' | 'OPENED' | 'READ' | 'CLICKED' | 'PURCHASED';
+export type EventType = 'SENT' | 'DELIVERED' | 'FAILED' | 'OPENED' | 'READ' | 'CLICKED' | 'PURCHASED';
 
 // ─── Channel-Specific Probability Configs ─────────────────
 // Realistic probability models per channel
@@ -172,7 +164,7 @@ async function sendCallback(
 export async function simulateDelivery(request: SendRequest): Promise<void> {
   const channel = request.channel.toUpperCase();
   const channelConfig = CHANNEL_CONFIGS[channel] || CHANNEL_CONFIGS.WHATSAPP;
-  const callbackUrl = request.callbackUrl || config.CRM_CALLBACK_URL;
+  const callbackUrl = request.callbackUrl || `${env.BACKEND_URL}/api/receipts`;
 
   logger.info(
     { communicationId: request.communicationId, channel, recipient: request.recipient.name },
@@ -239,3 +231,17 @@ function getRandomFailureReason(channel: string): string {
   const channelReasons = reasons[channel] || reasons.WHATSAPP;
   return channelReasons[Math.floor(Math.random() * channelReasons.length)];
 }
+
+// ─── Stats Tracker ─────────────────────────────────────
+
+export interface ChannelStats {
+  totalReceived: number;
+  activeSimulations: number;
+  totalCompleted: number;
+}
+
+export const channelStats: ChannelStats = {
+  totalReceived: 0,
+  activeSimulations: 0,
+  totalCompleted: 0,
+};
