@@ -2,7 +2,7 @@
   "name": "xeno-crm-backend",
   "version": "1.0.0",
   "description": "AI-Native Mini CRM Backend — Autonomous Campaign Planner",
-  "type": "module",
+
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

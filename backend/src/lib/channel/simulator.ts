@@ -163,7 +163,7 @@ async function sendCallback(
 
 export async function simulateDelivery(request: SendRequest): Promise<void> {
   const channel = request.channel.toUpperCase();
-  const channelConfig = CHANNEL_CONFIGS[channel] || CHANNEL_CONFIGS.WHATSAPP;
+  const channelConfig = (CHANNEL_CONFIGS[channel] || CHANNEL_CONFIGS.WHATSAPP) as ChannelConfig;
   const callbackUrl = request.callbackUrl || `${env.BACKEND_URL}/api/receipts`;
 
   logger.info(
@@ -228,8 +228,9 @@ function getRandomFailureReason(channel: string): string {
     EMAIL: ['Bounced', 'Spam filtered', 'Invalid address', 'Mailbox full'],
     RCS: ['RCS not supported', 'Fallback required', 'Network error', 'Device offline'],
   };
-  const channelReasons = reasons[channel] || reasons.WHATSAPP;
-  return channelReasons[Math.floor(Math.random() * channelReasons.length)];
+  const channelReasons = (reasons[channel] || reasons.WHATSAPP) as string[];
+  const reason = channelReasons[Math.floor(Math.random() * channelReasons.length)];
+  return reason || 'Unknown error';
 }
 
 // ─── Stats Tracker ─────────────────────────────────────
