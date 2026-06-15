@@ -1,4 +1,4 @@
-﻿import { Server as HttpServer } from 'http';
+import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { env } from '../config/env';
 import { logger } from './logger';
@@ -8,7 +8,7 @@ let io: Server | null = null;
 export function initSocket(server: HttpServer): void {
   io = new Server(server, {
     cors: {
-      origin: env.FRONTEND_URL || 'http://localhost:3000',
+      origin: (env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, ''),
       methods: ['GET', 'POST'],
       credentials: true,
     },
