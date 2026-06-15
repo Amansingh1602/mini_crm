@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { apiLimiter } from './middleware/rateLimit';
@@ -29,7 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // ΓöÇΓöÇΓöÇ Request Logging ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
-app.use((req, _res, next) => {
+app.use((req: Request, _res: Response, next: NextFunction) => {
   logger.info({ method: req.method, url: req.url }, 'Incoming request');
   next();
 });
@@ -40,7 +40,7 @@ app.use('/api/', apiLimiter);
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 
-app.get('/health', (_req, res) => {
+app.get('/health', (_req: Request, res: Response) => {
   const db = getDBStatus();
   res.json({
     status: db.isConnected ? 'ok' : 'degraded',
@@ -53,7 +53,7 @@ app.get('/health', (_req, res) => {
 
 // ─── Database Status Middleware ───────────────────────────────────────────────
 
-app.use('/api/', (req, res, next) => {
+app.use('/api/', (req: Request, res: Response, next: NextFunction) => {
   const db = getDBStatus();
   if (!db.isConnected) {
     res.status(503).json({
@@ -80,7 +80,7 @@ app.use('/api/channel', channelRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 
-app.use((_req, res) => {
+app.use((_req: Request, res: Response) => {
   res.status(404).json({ success: false, error: 'Route not found', code: 'NOT_FOUND' });
 });
 
