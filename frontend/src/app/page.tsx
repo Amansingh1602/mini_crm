@@ -26,7 +26,8 @@ export default function DashboardPage() {
 
   // Setup real-time analytics stream via WebSocket
   useEffect(() => {
-    const socket = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001");
+    const socketUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/api\/?$/, "");
+    const socket = io(socketUrl);
 
     socket.on("connect", () => {
       console.log("Connected to real-time analytics stream");
