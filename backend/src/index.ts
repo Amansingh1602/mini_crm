@@ -10,9 +10,12 @@ import { closeRedis } from './lib/redis';
 async function main() {
   validateEnv();
 
-  // Connect to database
-  await connectDB();
-  logger.info('Database connected');
+  // Connect to database (non-blocking — server starts even if DB is down)
+  try {
+    await connectDB();
+  } catch (err) {
+    logger.warn({ err }, 'Database connection failed — server will start without DB');
+  }
 
   // Start BullMQ workers
   try {
